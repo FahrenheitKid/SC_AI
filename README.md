@@ -9,11 +9,11 @@ C++ project for the development of an SC AI Bot.
   - Able to adapt its strategies on the fly.
 
 ## TO DO List!
-[x] Create the Repository and setup dev environment
-[ ]  Create the first simplest version of the bot  that actually wins!
-[ ] Complete Production Manager
-[ ] Complete Production Manager
-[ ] Complete Production Manager
+- Create the Repository and setup dev environment
+- Create the first simplest version of the bot  that actually wins!
+- Complete Production Manager
+- Complete Combat Manager
+- Complete Strategy Manager
 
 #### Useful Links
 
