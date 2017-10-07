@@ -117,8 +117,7 @@ void ProductionManager::update()
 
 	if (minerals_status == PLENTY)
 	{
-		//
-		//Broodwar << "IM RICH IM RICH IM RICH" << endl;
+		///Broodwar << "IM RICH IM RICH IM RICH" << endl;
 	}
 }
 
