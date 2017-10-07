@@ -13,13 +13,13 @@
 # Build results
 [Dd]ebug/
 [Dd]ebugPublic/
-[Rr]elease/
-[Rr]eleases/
-x64/
-x86/
+# [Rr]elease/
+ [Rr]eleases/
+# x64/
+# x86/
 bld/
-[Bb]in/
-[Oo]bj/
+# [Bb]in/
+# [Oo]bj/
 [Ll]og/
 
 # Visual Studio 2015 cache/options directory
@@ -38,7 +38,7 @@ TestResult.xml
 # Build Results of an ATL Project
 [Dd]ebugPS/
 [Rr]eleasePS/
-dlldata.c
+# dlldata.c
 
 # DNX
 project.lock.json
