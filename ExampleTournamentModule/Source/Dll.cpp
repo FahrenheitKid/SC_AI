@@ -7,15 +7,15 @@ extern "C" __declspec(dllexport) void gameInit(BWAPI::Game* game) { BWAPI::Brood
 
 BOOL APIENTRY DllMain(HANDLE, DWORD, LPVOID)
 {
-  return TRUE;
+	return TRUE;
 }
 
 extern "C" __declspec(dllexport) BWAPI::AIModule* newTournamentAI()
 {
-  return new ExampleTournamentAI();
+	return new ExampleTournamentAI();
 }
 
- extern "C" __declspec(dllexport) BWAPI::TournamentModule* newTournamentModule()
+extern "C" __declspec(dllexport) BWAPI::TournamentModule* newTournamentModule()
 {
-  return new ExampleTournamentModule();
+	return new ExampleTournamentModule();
 }
