@@ -17,9 +17,10 @@ private:
 	int minerals;
 	int reserved_minerals;
 	int supply;
+	int reserved_supply;
 	int max_supply;
 	int supply_percentage;
-
+	bool hold_worker_production;
 	BWAPI::Race race;
 
 	amount_status minerals_status;
@@ -33,6 +34,8 @@ public:
 	Utilities util;
 	std::string hello;
 	ProductionManager();
+	~ProductionManager();
+
 	void updateResources();
 
 	//build a supply unit
@@ -40,11 +43,23 @@ public:
 
 	bool isReservedMineralsBiggerThan(int amount);
 	bool isReservedGasBiggerThan(int amount);
+	bool isReservedSupplyBiggerThan(int amount);
 
 	// returns true if There are more overall minerals than the reserved ones
 	bool isThereAvailableMinerals();
 	// returns true if There are more overall gas than the reserved ones
 	bool isThereAvailableGas();
+
+	// returns true if There are more overall supply  than the reserved ones
+	bool isThereAvailableSupply();
+
+	//returns the amount available for use e.g. pure value - reserved ones
+	unsigned int getAvailableSupply() const;
+	unsigned int getAvailableMinerals() const;
+	unsigned int getAvailableGas() const;
+
+	// returns true if there is available resources to build a unit
+	bool isThereAvailableResourcesFor(UnitType u);
 
 	//reserve the unit's mineral and gas amount
 	bool reserveUnitPrice(UnitType u);
@@ -56,10 +71,11 @@ public:
 
 	// makes all idle nexus build workers
 	void makeIdleNexusBuildWorkers();
-
-	int getSpeedtest() { return speedtest; };
-
+	void makeAllIdlesWork(int refineries_amount);
+	void searchAndBuildRefinery();
+	int getRefineriesAmount();
 	/*get and sets functions*/
+	int getSpeedtest() { return speedtest; };
 
 	amount_status getGasStatus() const { return gas_status; }
 	void setGasStatus(amount_status val) { gas_status = val; }
@@ -73,10 +89,20 @@ public:
 	void SetRace(BWAPI::Race val) { race = val; }
 	int getMinerals() const { return minerals; }
 	void setMinerals(int val) { minerals = val; }
-	int getReserved_minerals() const { return reserved_minerals; }
-	void setReserved_minerals(int val) { reserved_minerals = val; }
+	int getReservedMinerals() const { return reserved_minerals; }
+	void setReservedMinerals(int val) { reserved_minerals = val; }
 	int getGas() const { return gas; }
 	void setGas(int val) { gas = val; }
 
-	~ProductionManager();
+	int getReservedGas() const { return reserved_gas; }
+	void setReservedGas(int val) { reserved_gas = val; }
+	int getSupply() const { return supply; }
+	void setSupply(int val) { supply = val; }
+	int getReservedSupply() const { return reserved_supply; }
+	void setReservedSupply(int val) { reserved_supply = val; }
+	int getMaxSupply() const { return max_supply; }
+	void getMaxSupply(int val) { max_supply = val; }
+
+	//function to immediatly adjust reserved resourcs in case they are bigger than the actual resources
+	void contigencyReservedResources();
 };

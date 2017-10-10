@@ -74,7 +74,7 @@ void ExampleAIModule::onFrame()
 	Broodwar->drawTextScreen(200, 0, "FPS: %d", Broodwar->getFPS());
 	Broodwar->drawTextScreen(200, 20, "Average FPS: %f", Broodwar->getAverageFPS());
 	Broodwar->drawTextScreen(200, 40, "Supply_status: %d", prManager.getSupplyStatus());
-	Broodwar->drawTextScreen(100, 50, "reserved_minerals: %d | Minerals: %d", prManager.getReserved_minerals(), prManager.getMinerals());
+	Broodwar->drawTextScreen(100, 50, "reserved_minerals: %d | Minerals: %d", prManager.getReservedMinerals(), prManager.getMinerals());
 
 	// Return if the game is a replay or is paused
 	if (Broodwar->isReplay() || Broodwar->isPaused() || !Broodwar->self())
@@ -304,6 +304,8 @@ void ExampleAIModule::onUnitComplete(BWAPI::Unit unit)
 	bool own = false;
 	for (auto &u : Broodwar->self()->getUnits())
 	{
+		if (!u->exists()) continue;
+
 		if (u == unit) own = true;
 	}
 
@@ -311,6 +313,8 @@ void ExampleAIModule::onUnitComplete(BWAPI::Unit unit)
 	if (own)
 	{
 		if (prManager.dereserveUnitPrice(unit->getType()))
-			Broodwar << "desreservou UM " + unit->getType().getName() << endl;
+		{
+			//	Broodwar << "desreservou UM " + unit->getType().getName() << endl;
+		}
 	}
 }

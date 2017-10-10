@@ -26,8 +26,6 @@ public:
 
 	bool isUnitDisabled(Unit u); // Returns true if unit is somehow disabled
 
-	void makeAllIdlesWork();
-	void makeIdleNexusBuildWorkers();
 	//int buildSupply(int queueAmountThreshold, amount_status supplypercent, int supplytrigger);
 	Utilities();
 	~Utilities();
