@@ -353,50 +353,53 @@ void ProductionManager::makeAllIdlesWork(int refineries_amount)
 	int amount_gathering_gas = 0;
 
 	// need to make 3 workers at refinery work!!!
-	/*
+
 	//if we have at least one refinery check to see if at least 3 workers are gathering there
 	if (refineries_amount > 0)
 	{
-	for (auto &u : Broodwar->self()->getUnits())
-	{
-	if (u->getType().isWorker())
-	{
-	if (u->isGatheringGas())
-	amount_gathering_gas++;
-	}
+		for (auto &u : Broodwar->self()->getUnits())
+		{
+			if (!u->exists()) continue;
+
+			if (u->getType().isWorker())
+			{
+				if (u->isGatheringGas())
+					amount_gathering_gas++;
+			}
+		}
+
+		// if less than 3, order the necessary workers to achieve 3 at refinery
+		if (amount_gathering_gas < 3)
+		{
+			for (int i = 0; i < 3 - amount_gathering_gas; i++)
+			{
+				if (amount_gathering_gas == 3) break;
+				for (auto &u : Broodwar->self()->getUnits())
+				{
+					if (!u->exists()) continue;
+
+					if (amount_gathering_gas == 3) break;
+
+					if (u->getType().isWorker() && !u->isGatheringGas())
+					{
+						if (util.isUnitDisabled(u)) continue;
+
+						if (!u->gather(u->getClosestUnit(Filter::IsRefinery)))
+						{
+							// If the call fails, then print the last error message
+							Broodwar << Broodwar->getLastError() << std::endl;
+						}
+						else
+						{
+							break;
+							amount_gathering_gas++;
+						}
+					}
+				}
+			}
+		}
 	}
 
-	// if less than 3, order the necessary workers to achieve 3 at refinery
-	if (amount_gathering_gas < 3)
-	{
-	for (int i = 0; i < 3 - amount_gathering_gas; i++)
-	{
-	if (amount_gathering_gas == 3) break;
-	for (auto &u : Broodwar->self()->getUnits())
-	{
-	if (amount_gathering_gas == 3) break;
-	if (u->getType().isWorker() && !u->isGatheringGas())
-	{
-	if (isUnitDisabled(u)) continue;
-
-	if (!u->gather(u->getClosestUnit(Filter::IsRefinery)))
-	{
-	// If the call fails, then print the last error message
-	Broodwar << Broodwar->getLastError() << std::endl;
-	}
-	else
-	{
-	amount_gathering_gas++;
-	}
-	}
-	}
-	}
-	}
-	}
-
-	*/
-
-	int atleast1workermining = 0;
 	for (auto &u : Broodwar->self()->getUnits())
 	{
 		if (!u->exists()) continue;
