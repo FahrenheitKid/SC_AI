@@ -23,11 +23,20 @@ private:
 	bool hold_worker_production;
 	BWAPI::Race race;
 
+	//overall status of resources
 	amount_status minerals_status;
 	amount_status gas_status;
 	amount_status supply_status;
 
 	vector <UnitType> UniversalBuildQueue;
+
+	//buildings and units queue
+	vector <buildingInfo> buildingsQueue;
+	vector <unitInfo> unitsQueue;
+
+	//The next unit that we should create
+	UnitType nextBuidling;
+	UnitType nextUnit;
 
 public:
 
@@ -69,10 +78,22 @@ public:
 
 	void update();
 
+	void setZealotRushQueues();
 	// makes all idle nexus build workers
 	void makeIdleNexusBuildWorkers();
+
+	//makes all idle workers work
 	void makeAllIdlesWork(int refineries_amount);
+
+	//searches for vespene geyser and builds a refinery there
 	void searchAndBuildRefinery();
+
+	//follows the building order list, creating the buildings when the time comes
+	void followBuildingOrder();
+
+	//follows the units order list, creating the units when the time comes
+	void followUnitOrder();
+
 	int getRefineriesAmount();
 	/*get and sets functions*/
 	int getSpeedtest() { return speedtest; };
@@ -103,6 +124,21 @@ public:
 	int getMaxSupply() const { return max_supply; }
 	void getMaxSupply(int val) { max_supply = val; }
 
-	//function to immediatly adjust reserved resourcs in case they are bigger than the actual resources
+	//function to immediately adjust reserved resources in case they are bigger than the actual resources
 	void contigencyReservedResources();
+
+	//decrements the first building find in the the building queue
+	bool decrementFirstBuildingInQueueOrder(Unit u);
+	//decrements the first unit find in the the building queue
+	bool decrementFirstUnitInQueueOrder(Unit u);
+
+	//decrements the first unit/building in the queue
+	bool decrementFirstInQueueOrder(Unit u);
+
+	bool isUnitInQueueOrder(Unit u);
+
+	BWAPI::UnitType getNextBuidling() const { return nextBuidling; }
+	void setNextBuidling(BWAPI::UnitType val) { nextBuidling = val; }
+	vector <buildingInfo> getBuildingsQueue() const { return buildingsQueue; }
+	void setBuildingsQueue(vector <buildingInfo> val) { buildingsQueue = val; }
 };

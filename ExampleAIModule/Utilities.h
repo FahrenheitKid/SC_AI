@@ -11,6 +11,13 @@ using namespace std;
 using namespace BWAPI;
 using namespace Filter;
 
+//enum to activate certain strategies
+enum Strats
+{
+	Standart,
+	Zealot_Rush
+};
+
 enum amount_status
 {
 	NONE,
@@ -18,6 +25,29 @@ enum amount_status
 	SOME,
 	PLENTY,
 	FULL
+};
+
+struct buildTiming
+{
+	int current_sup;
+	int current_maxsup;
+};
+
+//struct used in buildings queue.
+
+//It has the building type, when to build (using "supply time units") and the amount that should be created.
+struct buildingInfo
+{
+	UnitType building;
+	int supply_timing;
+	int quantity;
+};
+//same as above but with units instead
+struct unitInfo
+{
+	UnitType unit;
+	int supply_timing;
+	int quantity;
 };
 
 class Utilities

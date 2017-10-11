@@ -7,8 +7,8 @@
 using namespace BWAPI;
 using namespace Filter;
 
-ProductionManager prManager;
 StrategyManager sManager;
+ProductionManager prManager;
 CombatManager cManager;
 
 void ExampleAIModule::onStart()
@@ -301,20 +301,20 @@ void ExampleAIModule::onUnitComplete(BWAPI::Unit unit)
 {
 	if (Broodwar->self()->isDefeated()) return;
 
-	bool own = false;
-	for (auto &u : Broodwar->self()->getUnits())
-	{
-		if (!u->exists()) continue;
+	//for now, if it isn't our units, we don't care
+	if (unit->getPlayer() != Broodwar->self()) return;
 
-		if (u == unit) own = true;
-	}
-
-	//só checa as proprias unidades
-	if (own)
+	//we should remove the reserved resources for that unit once it is completed/finally created
+	if (prManager.dereserveUnitPrice(unit->getType()))
 	{
-		if (prManager.dereserveUnitPrice(unit->getType()))
+		//if that unit was the nextbuilding to create in the build order queue, we should decrement it from there
+		if (prManager.isUnitInQueueOrder(unit))
 		{
-			//	Broodwar << "desreservou UM " + unit->getType().getName() << endl;
+			if (prManager.decrementFirstInQueueOrder(unit))
+			{
+				Broodwar << "removido da queue order: " + unit->getType().getName() << endl;
+			}
 		}
+		//	Broodwar << "desreservou UM " + unit->getType().getName() << endl;
 	}
 }

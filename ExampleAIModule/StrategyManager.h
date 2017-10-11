@@ -12,6 +12,8 @@ private:
 	BWAPI::Race race;
 
 	bool doProtossStrat = false;
+	Strats currentStrategy;
+	ProductionManager *prManager_ptr;
 
 public:
 	StrategyManager();
@@ -20,5 +22,10 @@ public:
 	void init(ProductionManager p);
 	Race getRace() { return race; };
 	void setRace(Race r) { race = r; };
+
+	void update();
+
 	~StrategyManager();
+	Strats getCurrentStrategy() const { return currentStrategy; }
+	void setCurrentStrategy(Strats val) { currentStrategy = val; }
 };

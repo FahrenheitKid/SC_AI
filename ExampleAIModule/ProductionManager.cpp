@@ -22,6 +22,8 @@ ProductionManager::ProductionManager()
 	/*
 
 	*/
+
+	setZealotRushQueues();
 }
 
 void ProductionManager::updateResources()
@@ -310,6 +312,37 @@ void ProductionManager::update()
 	}
 }
 
+void ProductionManager::setZealotRushQueues()
+{
+	if (race.getID() != BWAPI::Races::Protoss) return;
+
+	buildingInfo firstGate;
+	firstGate.building = UnitTypes::Protoss_Gateway;
+	firstGate.supply_timing = 10;
+	firstGate.quantity = 1;
+
+	buildingInfo secondGate;
+	secondGate.building = UnitTypes::Protoss_Gateway;
+	secondGate.supply_timing = 12;
+	secondGate.quantity = 1;
+
+	unitInfo firstZealot;
+	firstZealot.unit = UnitTypes::Protoss_Zealot;
+	firstZealot.supply_timing = 10;
+	firstZealot.quantity = 1;
+
+	unitInfo secondZealot;
+	secondZealot.unit = UnitTypes::Protoss_Zealot;
+	secondZealot.supply_timing = 12;
+	secondZealot.quantity = 2;
+
+	buildingsQueue.push_back(firstGate);
+	buildingsQueue.push_back(secondGate);
+
+	unitsQueue.push_back(firstZealot);
+	unitsQueue.push_back(secondZealot);
+}
+
 void ProductionManager::makeIdleNexusBuildWorkers()
 {
 	if (Broodwar->self()->isDefeated() || Broodwar->self()->isVictorious()) return;
@@ -532,6 +565,16 @@ void ProductionManager::searchAndBuildRefinery()
 	}
 }
 
+void ProductionManager::followBuildingOrder()
+{
+	if (buildingsQueue.size() <= 0) return;
+
+	UnitType nextBuidling = buildingsQueue.front().building;
+
+	//if()
+}
+
+//returns the amount of refineries that we own
 int ProductionManager::getRefineriesAmount()
 {
 	int amount = 0;
@@ -549,11 +592,104 @@ int ProductionManager::getRefineriesAmount()
 	return amount;
 }
 
+//function to never let reserved resources be bigger than actual ones
 void ProductionManager::contigencyReservedResources()
 {
 	if (getReservedMinerals() > getMinerals()) setReservedMinerals(getMinerals());
 	if (getReservedGas() > getGas()) setReservedGas(getGas());
 	if (getReservedSupply() > getAvailableSupply()) setReservedSupply(getSupply());
+}
+
+bool ProductionManager::decrementFirstBuildingInQueueOrder(Unit u)
+{
+	if (buildingsQueue.size() < 0) return false;
+
+	bool decremented = false;
+
+	for (int i = 0; i < buildingsQueue.size(); i++)
+	{
+		if (buildingsQueue[i].building == u->getType() && buildingsQueue[i].quantity >= 1)
+		{
+			decremented = true;
+			buildingsQueue[i].quantity--;
+		}
+	}
+
+	//update building queue to remove any building that has 0 quantity
+	for (int i = 0; i < buildingsQueue.size(); i++)
+	{
+		if (buildingsQueue[i].quantity == 0)
+		{
+			buildingsQueue.erase(buildingsQueue.begin() + i);
+		}
+	}
+
+	return decremented;
+}
+
+bool ProductionManager::decrementFirstUnitInQueueOrder(Unit u)
+{
+	if (unitsQueue.size() < 0) return false;
+
+	bool decremented = false;
+
+	for (int i = 0; i < unitsQueue.size(); i++)
+	{
+		if (unitsQueue[i].unit == u->getType() && unitsQueue[i].quantity >= 1)
+		{
+			decremented = true;
+			unitsQueue[i].quantity--;
+		}
+	}
+
+	//update building queue to remove any building that has 0 quantity
+	for (int i = 0; i < unitsQueue.size(); i++)
+	{
+		if (unitsQueue[i].quantity == 0)
+		{
+			unitsQueue.erase(unitsQueue.begin() + i);
+		}
+	}
+
+	return decremented;
+}
+
+bool ProductionManager::decrementFirstInQueueOrder(Unit u)
+{
+	if (u->getType().isBuilding())
+	{
+		return decrementFirstBuildingInQueueOrder(u);
+	}
+	else
+	{
+		return decrementFirstUnitInQueueOrder(u);
+	}
+}
+
+bool ProductionManager::isUnitInQueueOrder(Unit u)
+{
+	if (u->getType().isBuilding())
+	{
+		for (int i = 0; i < buildingsQueue.size(); i++)
+		{
+			if (buildingsQueue[i].building == u->getType())
+			{
+				return true;
+			}
+		}
+	}
+	else
+	{
+		for (int i = 0; i < unitsQueue.size(); i++)
+		{
+			if (unitsQueue[i].unit == u->getType())
+			{
+				return true;
+			}
+		}
+	}
+
+	return false;
 }
 
 unsigned int ProductionManager::getAvailableSupply() const
