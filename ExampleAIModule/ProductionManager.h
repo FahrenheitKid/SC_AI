@@ -35,14 +35,18 @@ private:
 	vector <unitInfo> unitsQueue;
 
 	//The next unit that we should create
-	UnitType nextBuidling;
-	UnitType nextUnit;
+	buildingInfo nextBuidling;
+	unitInfo nextUnit;
 
 public:
 
 	Utilities util;
 	std::string hello;
 	ProductionManager();
+
+	//make the same actions as the constructor
+	void constructorInit();
+
 	~ProductionManager();
 
 	void updateResources();
@@ -78,12 +82,15 @@ public:
 
 	void update();
 
-	void setZealotRushQueues();
+	bool setZealotRushQueues();
 	// makes all idle nexus build workers
 	void makeIdleNexusBuildWorkers();
 
 	//makes all idle workers work
 	void makeAllIdlesWork(int refineries_amount);
+
+	//makes a idle or farming worker go build a specific building/unit
+	bool makeWorkerBuild(UnitType unitToBuild, int queueAmountThreshold);
 
 	//searches for vespene geyser and builds a refinery there
 	void searchAndBuildRefinery();
@@ -137,8 +144,8 @@ public:
 
 	bool isUnitInQueueOrder(Unit u);
 
-	BWAPI::UnitType getNextBuidling() const { return nextBuidling; }
-	void setNextBuidling(BWAPI::UnitType val) { nextBuidling = val; }
+	buildingInfo getNextBuidling() const { return nextBuidling; }
+	void setNextBuidling(buildingInfo val) { nextBuidling = val; }
 	vector <buildingInfo> getBuildingsQueue() const { return buildingsQueue; }
 	void setBuildingsQueue(vector <buildingInfo> val) { buildingsQueue = val; }
 };

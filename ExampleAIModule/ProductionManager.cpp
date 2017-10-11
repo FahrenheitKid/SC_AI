@@ -23,7 +23,35 @@ ProductionManager::ProductionManager()
 
 	*/
 
-	setZealotRushQueues();
+	//CANT USE THIS LINE OTHERWISE BREAKS THE DLL
+	//if (setZealotRushQueues()) Broodwar << "QUEUE SETADA " << endl;
+}
+
+void ProductionManager::constructorInit()
+{
+	speedtest = 1;
+	hello = "Hello World";
+	ProductionManager::setGas(0);
+	setReservedGas(0);
+	ProductionManager::minerals = 0;
+	reserved_minerals = 0;
+	setSupply(4);
+	getMaxSupply(9);
+	supply_percentage = 0;
+	hold_worker_production = false;
+
+	if (!race)
+		race = Broodwar->self()->getRace();
+
+	minerals_status = NONE;
+	gas_status = NONE;
+	supply_status = NONE;
+	/*
+
+	*/
+
+	if (setZealotRushQueues()) Broodwar << "QUEUE SETADA " << endl;
+	else Broodwar << "QUEUE ERROR " << endl;
 }
 
 void ProductionManager::updateResources()
@@ -173,7 +201,7 @@ int ProductionManager::buildSupply(int queueAmountThreshold)
 							supplyProviderType.buildTime() + 100);  // frames to run
 
 																	// Order the builder to construct the supply structure
-						//Broodwar << "ENTROU" << endl;
+																	//Broodwar << "ENTROU" << endl;
 
 						if (supplyBuilder->build(supplyProviderType, targetBuildLocation))
 						{
@@ -304,6 +332,9 @@ void ProductionManager::update()
 	searchAndBuildRefinery();
 	updateResources();
 
+	//followBuildingOrder();
+	//updateResources();
+
 	if (isThereAvailableMinerals() && getSupplyStatus() != PLENTY || getSupplyStatus() != FULL)
 	{
 		//if(!hold_worker_production)
@@ -312,9 +343,11 @@ void ProductionManager::update()
 	}
 }
 
-void ProductionManager::setZealotRushQueues()
+bool ProductionManager::setZealotRushQueues()
 {
-	if (race.getID() != BWAPI::Races::Protoss) return;
+	//need to fix this
+	//if (Broodwar->self()->getRace() != Protoss) return false;
+
 
 	buildingInfo firstGate;
 	firstGate.building = UnitTypes::Protoss_Gateway;
@@ -341,6 +374,8 @@ void ProductionManager::setZealotRushQueues()
 
 	unitsQueue.push_back(firstZealot);
 	unitsQueue.push_back(secondZealot);
+
+	return true;
 }
 
 void ProductionManager::makeIdleNexusBuildWorkers()
@@ -479,6 +514,83 @@ void ProductionManager::makeAllIdlesWork(int refineries_amount)
 	}
 }
 
+bool ProductionManager::makeWorkerBuild(UnitType unitToBuild, int queueAmountThreshold)
+{
+	if (Broodwar->self()->isDefeated() || Broodwar->self()->isVictorious()) return false;
+
+	if (!isThereAvailableResourcesFor(unitToBuild)) return false;
+
+	// Iterate through all the units that we own
+	for (auto &u : Broodwar->self()->getUnits())
+	{
+		if (!u->exists()) continue;
+
+		Position pos = u->getPosition();
+		Error lastErr = Broodwar->getLastError();
+		Broodwar->registerEvent([pos, lastErr](Game*) { Broodwar->drawTextMap(pos, "%c%s", Text::White, lastErr.c_str()); },   // action
+			nullptr,    // condition
+			Broodwar->getLatencyFrames());  // frames to run
+
+		static int lastChecked = 0;
+
+		// If we haven't tried constructing more recently
+		if (lastChecked + 400 < Broodwar->getFrameCount() &&
+			Broodwar->self()->incompleteUnitCount(unitToBuild) <= queueAmountThreshold)
+		{
+			lastChecked = Broodwar->getFrameCount();
+
+			// Retrieve a unit that is capable of constructing the supply needed
+			Unit builder = u->getClosestUnit(GetType == unitToBuild.whatBuilds().first &&
+				(IsIdle || IsGatheringMinerals) && IsOwned);
+			// If a unit was found
+			if (builder && !util.isUnitDisabled(builder))
+			{
+				//if unit to build is a building
+				if (unitToBuild.isBuilding())
+				{
+					TilePosition targetBuildLocation = Broodwar->getBuildLocation(unitToBuild, builder->getTilePosition());
+					if (targetBuildLocation)
+					{
+						// Register an event that draws the target build location
+						Broodwar->registerEvent([targetBuildLocation, unitToBuild](Game*)
+						{
+							Broodwar->drawBoxMap(Position(targetBuildLocation),
+								Position(targetBuildLocation + unitToBuild.tileSize()),
+								Colors::Blue);
+						},
+							nullptr,  // condition
+							unitToBuild.buildTime() + 100);  // frames to run
+
+															 // Order the builder to construct the supply structure
+															 //Broodwar << "ENTROU" << endl;
+
+						if (builder->build(unitToBuild, targetBuildLocation))
+						{
+							if (isThereAvailableResourcesFor(unitToBuild))
+							{
+								//maybe put inside if
+								reserveUnitPrice(unitToBuild);
+								return true;
+							}
+
+							//Broodwar << "Reservou UM probe (100)" << endl;
+						}
+					}
+				}
+				else
+				{
+					// Train the supply provider (Overlord) if the provider is not a structure
+
+					if (builder->train(unitToBuild))
+						return true;
+				}
+			} // closure: supplyBuilder is valid
+		} // closure: insufficient supply
+	}
+
+	return false;
+}
+
 void ProductionManager::searchAndBuildRefinery()
 {
 	if (Broodwar->self()->isDefeated() || Broodwar->self()->isVictorious()) return;
@@ -540,8 +652,8 @@ void ProductionManager::searchAndBuildRefinery()
 							nullptr,  // condition
 							refineryType.buildTime() + 100);  // frames to run
 
-																	// Order the builder to construct the supply structure
-																	//Broodwar << "ENTROU" << endl;
+															  // Order the builder to construct the supply structure
+															  //Broodwar << "ENTROU" << endl;
 
 						if (refineryBuilder->build(refineryType, targetBuildLocation))
 						{
@@ -569,9 +681,27 @@ void ProductionManager::followBuildingOrder()
 {
 	if (buildingsQueue.size() <= 0) return;
 
-	UnitType nextBuidling = buildingsQueue.front().building;
+	nextBuidling = buildingsQueue.front();
+
+	//if we need to build at least one building
+	if (nextBuidling.quantity >= 1)
+	{
+		//if it is the right time and we have the resources for it
+		if (nextBuidling.supply_timing >= getSupply())
+		{
+			Broodwar << "Need to build a: " + nextBuidling.building.getName() << std::endl;
+			//isThereAvailableResourcesFor(nextBuidling.building)
+			//make a worker build that building, if the quantity is more than one, it will construct even if its already being build somewhere
+			makeWorkerBuild(nextBuidling.building, nextBuidling.quantity - 1);
+		}
+	}
 
 	//if()
+}
+
+void ProductionManager::followUnitOrder()
+{
+
 }
 
 //returns the amount of refineries that we own
