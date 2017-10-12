@@ -38,6 +38,10 @@ private:
 	buildingInfo nextBuidling;
 	unitInfo nextUnit;
 
+	bool isScounting;
+	bool holdScouting;
+	Unit scout;
+
 public:
 
 	Utilities util;
@@ -74,6 +78,17 @@ public:
 	//returns if a unit is disabled somehow or is constructing/being constructed
 	bool isUnitDisabled(Unit u);
 
+	
+
+	void moveScouts();
+
+
+	// all these are utility functions from ualbertabot !!
+	bool enemyWorkerInRadius();
+	BWAPI::Unit closestEnemyWorker();
+	void smartMove(BWAPI::Unit  attacker, BWAPI::Position targetPosition);
+	// ualbertabot ends here
+
 	// returns true if there is available resources to build a unit
 	bool isThereAvailableResourcesFor(UnitType u);
 
@@ -84,6 +99,11 @@ public:
 	bool dereserveUnitPrice(UnitType u);
 
 	void update();
+	BWAPI::Unit getClosestEnemyNexus();
+	//choose a worker and send it to scout;
+	bool sendScout();
+
+	void updateScoutStatus();
 
 	//set zealot rush strategy build orders
 	bool setZealotRushQueues();
@@ -120,6 +140,9 @@ public:
 	int getRefineriesAmount();
 	/*get and sets functions*/
 	int getSpeedtest() { return speedtest; };
+
+	bool isScout(Unit u);
+
 
 	amount_status getGasStatus() const { return gas_status; }
 	void setGasStatus(amount_status val) { gas_status = val; }
@@ -164,4 +187,8 @@ public:
 	void setNextBuidling(buildingInfo val) { nextBuidling = val; }
 	vector <buildingInfo> getBuildingsQueue() const { return buildingsQueue; }
 	void setBuildingsQueue(vector <buildingInfo> val) { buildingsQueue = val; }
+	BWAPI::Unit getScout() const { return scout; }
+	void setScout(BWAPI::Unit val) { scout = val; isScounting = true; }
+	void resetScout() { scout = nullptr; isScounting = false; };
+	BWAPI::Unit getPossibleScout(UnitType type);
 };
