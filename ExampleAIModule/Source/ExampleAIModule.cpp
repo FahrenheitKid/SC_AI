@@ -20,7 +20,7 @@ void ExampleAIModule::onStart()
 	prManager.constructorInit();
 	sManager.init(prManager);
 
-	Broodwar->setLocalSpeed(15);
+	Broodwar->setLocalSpeed(0);
 	// Print the map name.
 	// BWAPI returns std::string when retrieving a string, don't forget to add .c_str() when printing!
 	Broodwar << "The map is " << Broodwar->mapName() << "!" << std::endl;
@@ -79,26 +79,22 @@ void ExampleAIModule::onFrame()
 	Broodwar->drawTextScreen(200, 40, "Supply_status: %d", prManager.getSupplyStatus());
 	Broodwar->drawTextScreen(100, 60, "reserved_minerals: %d | Minerals: %d", prManager.getReservedMinerals(), prManager.getMinerals());
 
-	
 	if (prManager.getBuildingsQueue().size() > 0)
 	{
+		buildingInfo nextB = prManager.getBuildingsQueue().front();
 
-	buildingInfo nextB = prManager.getBuildingsQueue().front();
+		string text = "Next building is a: ";
+		text += nextB.building.getName();
+		text += " | Quantity %d | timing: %d | cost: %d";
 
-	string text = "Next building is a: ";
-	text += nextB.building.getName();
-	text += " | Quantity %d | timing: %d | cost: %d";
-
-	Broodwar->drawTextScreen(100, 70, text.c_str(),
-	nextB.quantity, nextB.supply_timing, nextB.building.mineralPrice());
-
+		Broodwar->drawTextScreen(100, 70, text.c_str(),
+			nextB.quantity, nextB.supply_timing, nextB.building.mineralPrice());
 	}
 	else
 	{
-	//Broodwar << "VAZIOOOOO " << endl;
+		//Broodwar << "VAZIOOOOO " << endl;
 	}
 
-	
 	// Return if the game is a replay or is paused
 	if (Broodwar->isReplay() || Broodwar->isPaused() || !Broodwar->self())
 		return;
@@ -109,117 +105,7 @@ void ExampleAIModule::onFrame()
 		return;
 
 	// Called once every game frame
-	//prManager.update();
-
-	/*
-	// Iterate through all the units that we own
-	for (auto &u : Broodwar->self()->getUnits())
-	{
-	// Ignore the unit if it no longer exists
-	// Make sure to include this block when handling any Unit pointer!
-	if ( !u->exists() )
-	continue;
-
-	// Ignore the unit if it has one of the following status ailments
-	if ( u->isLockedDown() || u->isMaelstrommed() || u->isStasised() )
-	continue;
-
-	// Ignore the unit if it is in one of the following states
-	if ( u->isLoaded() || !u->isPowered() || u->isStuck() )
-	continue;
-
-	// Ignore the unit if it is incomplete or busy constructing
-	if ( !u->isCompleted() || u->isConstructing() )
-	continue;
-
-	// Finally make the unit do some stuff!
-
-	// If the unit is a worker unit
-	if ( u->getType().isWorker() )
-	{
-	// if our worker is idle
-	if ( u->isIdle() )
-	{
-	// Order workers carrying a resource to return them to the center,
-	// otherwise find a mineral patch to harvest.
-	if ( u->isCarryingGas() || u->isCarryingMinerals() )
-	{
-	u->returnCargo();
-	}
-	else if ( !u->getPowerUp() )  // The worker cannot harvest anything if it
-	{                             // is carrying a powerup such as a flag
-	// Harvest from the nearest mineral patch or gas refinery
-	if ( !u->gather( u->getClosestUnit( IsMineralField || IsRefinery )) )
-	{
-	// If the call fails, then print the last error message
-	Broodwar << Broodwar->getLastError() << std::endl;
-	}
-	} // closure: has no powerup
-	} // closure: if idle
-	}
-	else if ( u->getType().isResourceDepot() ) // A resource depot is a Command Center, Nexus, or Hatchery
-	{
-	// Order the depot to construct more workers! But only when it is idle.
-	if ( u->isIdle() && !u->train(u->getType().getRace().getWorker()) )
-	{
-	// If that fails, draw the error at the location so that you can visibly see what went wrong!
-	// However, drawing the error once will only appear for a single frame
-	// so create an event that keeps it on the screen for some frames
-	Position pos = u->getPosition();
-	Error lastErr = Broodwar->getLastError();
-	Broodwar->registerEvent([pos,lastErr](Game*){ Broodwar->drawTextMap(pos, "%c%s", Text::White, lastErr.c_str()); },   // action
-	nullptr,    // condition
-	Broodwar->getLatencyFrames());  // frames to run
-
-	// Retrieve the supply provider type in the case that we have run out of supplies
-	UnitType supplyProviderType = u->getType().getRace().getSupplyProvider();
-	static int lastChecked = 0;
-
-	// If we are supply blocked and haven't tried constructing more recently
-	if (  lastErr == Errors::Insufficient_Supply &&
-	lastChecked + 400 < Broodwar->getFrameCount() &&
-	Broodwar->self()->incompleteUnitCount(supplyProviderType) == 0 )
-	{
-	lastChecked = Broodwar->getFrameCount();
-
-	// Retrieve a unit that is capable of constructing the supply needed
-	Unit supplyBuilder = u->getClosestUnit(  GetType == supplyProviderType.whatBuilds().first &&
-	(IsIdle || IsGatheringMinerals) &&
-	IsOwned);
-	// If a unit was found
-	if ( supplyBuilder )
-	{
-	if ( supplyProviderType.isBuilding() )
-	{
-	TilePosition targetBuildLocation = Broodwar->getBuildLocation(supplyProviderType, supplyBuilder->getTilePosition());
-	if ( targetBuildLocation )
-	{
-	// Register an event that draws the target build location
-	Broodwar->registerEvent([targetBuildLocation,supplyProviderType](Game*)
-	{
-	Broodwar->drawBoxMap( Position(targetBuildLocation),
-	Position(targetBuildLocation + supplyProviderType.tileSize()),
-	Colors::Blue);
-	},
-	nullptr,  // condition
-	supplyProviderType.buildTime() + 100 );  // frames to run
-
-	// Order the builder to construct the supply structure
-	supplyBuilder->build( supplyProviderType, targetBuildLocation );
-	}
-	}
-	else
-	{
-	// Train the supply provider (Overlord) if the provider is not a structure
-	supplyBuilder->train( supplyProviderType );
-	}
-	} // closure: supplyBuilder is valid
-	} // closure: insufficient supply
-	} // closure: failed to train idle unit
-	}
-	} // closure: unit iterator
-
-	*/
+	prManager.update();
 }
 
 void ExampleAIModule::onSendText(std::string text)
@@ -322,6 +208,8 @@ void ExampleAIModule::onSaveGame(std::string gameName)
 
 void ExampleAIModule::onUnitComplete(BWAPI::Unit unit)
 {
+	if (!unit || !unit->exists()) return;
+
 	if (Broodwar->self()->isDefeated()) return;
 
 	//for now, if it isn't our units, we don't care
@@ -330,6 +218,8 @@ void ExampleAIModule::onUnitComplete(BWAPI::Unit unit)
 	//we should remove the reserved resources for that unit once it is completed/finally created
 	if (prManager.dereserveUnitPrice(unit->getType()))
 	{
+		
+
 		//if that unit was the next building to create in the build order queue, we should decrement it from there
 		if (prManager.isUnitInQueueOrder(unit))
 		{
@@ -339,5 +229,6 @@ void ExampleAIModule::onUnitComplete(BWAPI::Unit unit)
 			}
 		}
 		//	Broodwar << "desreservou UM " + unit->getType().getName() << endl;
+		
 	}
 }

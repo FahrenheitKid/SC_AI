@@ -71,6 +71,9 @@ public:
 	unsigned int getAvailableMinerals() const;
 	unsigned int getAvailableGas() const;
 
+	//returns if a unit is disabled somehow or is constructing/being constructed
+	bool isUnitDisabled(Unit u);
+
 	// returns true if there is available resources to build a unit
 	bool isThereAvailableResourcesFor(UnitType u);
 
@@ -86,11 +89,20 @@ public:
 	// makes all idle nexus build workers
 	void makeIdleNexusBuildWorkers();
 
+	//function that checks the queue order for units with infinite (-1) quantity and build them
+	void makeBuildingsBuildEndless();
+
+	//returns how many buildings we own that cna build a specific unit
+	int howManyUnitsCanMake(UnitType unitToBuild);
+
 	//makes all idle workers work
 	void makeAllIdlesWork(int refineries_amount);
 
 	//makes a idle or farming worker go build a specific building/unit
 	bool makeWorkerBuild(UnitType unitToBuild, int queueAmountThreshold);
+
+	//order the first building that can build the unit with empty space in training queue to build it
+	bool makeSomeBuildingBuild(UnitType unitToBuild, int queueAmountThreshold);
 
 	//searches for vespene geyser and builds a refinery there
 	void searchAndBuildRefinery();
@@ -129,7 +141,7 @@ public:
 	int getReservedSupply() const { return reserved_supply; }
 	void setReservedSupply(int val) { reserved_supply = val; }
 	int getMaxSupply() const { return max_supply; }
-	void getMaxSupply(int val) { max_supply = val; }
+	void setMaxSupply(int val) { max_supply = val; }
 
 	//function to immediately adjust reserved resources in case they are bigger than the actual resources
 	void contigencyReservedResources();

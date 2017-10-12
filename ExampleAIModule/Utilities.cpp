@@ -8,7 +8,7 @@ bool Utilities::isUnitDisabled(Unit u)
 {
 	// Ignore the unit if it no longer exists
 	// Make sure to include this block when handling any Unit pointer!
-	if (!u->exists())
+	if (!u->exists() || !u)
 		return true;
 
 	// Ignore the unit if it has one of the following status ailments
