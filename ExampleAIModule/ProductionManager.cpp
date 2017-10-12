@@ -50,8 +50,15 @@ void ProductionManager::constructorInit()
 
 	*/
 
-	if (setZealotRushQueues()) Broodwar << "QUEUE SETADA " << endl;
+	/*
+	if (setSneakTemplarsQueues()) Broodwar << "QUEUE  TEMPLAR SETADA " << endl;
 	else Broodwar << "QUEUE ERROR " << endl;
+	*/
+	
+	if (setZealotRushQueues()) Broodwar << "QUEUE  zealot SETADA " << endl;
+	else Broodwar << "QUEUE ERROR " << endl;
+	
+	
 }
 
 void ProductionManager::updateResources()
@@ -382,6 +389,43 @@ bool ProductionManager::setZealotRushQueues()
 
 	unitInfo thirdZealot;
 	secondZealot.unit = UnitTypes::Protoss_Zealot;
+	secondZealot.supply_timing = 13;
+	secondZealot.quantity = -1;
+
+	buildingsQueue.push_back(firstGate);
+	buildingsQueue.push_back(secondGate);
+
+	unitsQueue.push_back(firstZealot);
+	unitsQueue.push_back(secondZealot);
+	unitsQueue.push_back(thirdZealot);
+
+	return true;
+}
+
+bool ProductionManager::setSneakTemplarsQueues()
+{
+	buildingInfo firstGate;
+	firstGate.building = UnitTypes::Protoss_Gateway;
+	firstGate.supply_timing = 10;
+	firstGate.quantity = 1;
+
+	buildingInfo secondGate;
+	secondGate.building = UnitTypes::Protoss_Gateway;
+	secondGate.supply_timing = 12;
+	secondGate.quantity = 1;
+
+	unitInfo firstZealot;
+	firstZealot.unit = UnitTypes::Protoss_Dark_Templar;
+	firstZealot.supply_timing = 10;
+	firstZealot.quantity = 1;
+
+	unitInfo secondZealot;
+	secondZealot.unit = UnitTypes::Protoss_Dark_Templar;
+	secondZealot.supply_timing = 12;
+	secondZealot.quantity = 2;
+
+	unitInfo thirdZealot;
+	secondZealot.unit = UnitTypes::Protoss_Dark_Templar;
 	secondZealot.supply_timing = 13;
 	secondZealot.quantity = -1;
 

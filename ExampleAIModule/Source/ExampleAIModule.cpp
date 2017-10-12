@@ -20,7 +20,7 @@ void ExampleAIModule::onStart()
 	prManager.constructorInit();
 	sManager.init(prManager);
 
-	Broodwar->setLocalSpeed(0);
+	Broodwar->setLocalSpeed(5);
 	// Print the map name.
 	// BWAPI returns std::string when retrieving a string, don't forget to add .c_str() when printing!
 	Broodwar << "The map is " << Broodwar->mapName() << "!" << std::endl;

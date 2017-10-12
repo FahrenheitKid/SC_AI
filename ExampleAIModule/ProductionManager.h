@@ -85,7 +85,11 @@ public:
 
 	void update();
 
+	//set zealot rush strategy build orders
 	bool setZealotRushQueues();
+
+	bool setSneakTemplarsQueues();
+
 	// makes all idle nexus build workers
 	void makeIdleNexusBuildWorkers();
 
