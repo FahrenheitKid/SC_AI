@@ -132,8 +132,10 @@ void ExampleAIModule::onFrame()
 				prManager.lastEnemyBaseLocation = u->getPosition();
 			}
 
+			cManager.lastEnemySeenPosition = u->getPosition();
 		}
 
+		
 	}
 
 }

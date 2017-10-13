@@ -7,7 +7,7 @@ CombatManager::CombatManager()
 void CombatManager::init(ProductionManager prM)
 {
 	prManager_ptr = &prM;
-	
+	attackTroopSize = 6;
 }
 
 void CombatManager::updateArmyQuantity()
@@ -79,25 +79,25 @@ void CombatManager::update()
 	if (zealotRush)
 	{
 
-		if (attackArmy.size() >= 5)
+		if (attackArmy.size() >= attackTroopSize)
 		{
 			Unitset u;
 			for (int i = 0; i < attackArmy.size(); i++)
 			{
-				if (u.size() < 5)
+				if (u.size() < attackTroopSize)
 				{
 					u.insert(attackArmy[i]);
 				}
 			}
 
-			if(attackArmy.size() >= 5)
+			if(attackArmy.size() >= attackTroopSize)
 			attackSets.push_back(u);
 		}
 
 		//check for sets that can attack
 		for (int i = 0; i < attackSets.size(); i++)
 		{
-			if (attackSets[i].size() >= 5)
+			if (attackSets[i].size() >= attackTroopSize)
 			{
 				//attackSets[i].smartattack(getClosestEnemyNexus(), Broodwar->enemy()->getRace()->getWorker());
 
@@ -106,6 +106,9 @@ void CombatManager::update()
 				{
 					if (!setUnit->exists()) continue;
 				
+					Position bias(0, 0);
+					if(!enemyBasePosition || enemyBasePosition == bias) continue;
+
 					SmartAttackMove(setUnit, enemyBasePosition);
 				}
 				

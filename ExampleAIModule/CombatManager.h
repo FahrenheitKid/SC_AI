@@ -27,6 +27,7 @@ private:
 
 
 	bool zealotRush;
+	
 
 public:
 
