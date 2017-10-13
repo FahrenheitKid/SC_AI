@@ -19,6 +19,7 @@ void ExampleAIModule::onStart()
 
 	prManager.constructorInit();
 	sManager.init(prManager);
+	cManager.init(prManager);
 
 	Broodwar->setLocalSpeed(10);
 	// Print the map name.
@@ -78,6 +79,7 @@ void ExampleAIModule::onFrame()
 	Broodwar->drawTextScreen(200, 20, "Average FPS: %f", Broodwar->getAverageFPS());
 	Broodwar->drawTextScreen(200, 40, "Supply_status: %d", prManager.getSupplyStatus());
 	Broodwar->drawTextScreen(100, 60, "reserved_minerals: %d | Minerals: %d", prManager.getReservedMinerals(), prManager.getMinerals());
+	Broodwar->drawTextScreen(50, 80, "attackArmySize: %d | AttackSetsSize: %d", cManager.getAttackArmy().size(), cManager.getAttackSets().size());
 
 	if (prManager.getBuildingsQueue().size() > 0)
 	{
@@ -106,6 +108,7 @@ void ExampleAIModule::onFrame()
 
 	// Called once every game frame
 	prManager.update();
+	cManager.update();
 }
 
 void ExampleAIModule::onSendText(std::string text)
@@ -230,5 +233,10 @@ void ExampleAIModule::onUnitComplete(BWAPI::Unit unit)
 		}
 		//	Broodwar << "desreservou UM " + unit->getType().getName() << endl;
 		
+	}
+
+	if (prManager.isZealotRush() && unit->getType() == UnitTypes::Protoss_Zealot)
+	{
+		cManager.pushAttackArmy(unit);
 	}
 }

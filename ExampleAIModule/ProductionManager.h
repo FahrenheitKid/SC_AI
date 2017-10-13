@@ -23,6 +23,7 @@ private:
 	bool hold_worker_production;
 	BWAPI::Race race;
 
+	bool zealotRush;
 	//overall status of resources
 	amount_status minerals_status;
 	amount_status gas_status;
@@ -190,5 +191,6 @@ public:
 	BWAPI::Unit getScout() const { return scout; }
 	void setScout(BWAPI::Unit val) { scout = val; isScounting = true; }
 	void resetScout() { scout = nullptr; isScounting = false; };
+	bool isZealotRush() { return zealotRush; }
 	BWAPI::Unit getPossibleScout(UnitType type);
 };

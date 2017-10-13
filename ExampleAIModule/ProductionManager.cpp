@@ -41,7 +41,7 @@ void ProductionManager::constructorInit()
 	hold_worker_production = false;
 	isScounting = false;
 	holdScouting = false;
-
+	zealotRush = false;
 	if (!race)
 		race = Broodwar->self()->getRace();
 
@@ -465,6 +465,8 @@ bool ProductionManager::setZealotRushQueues()
 	unitsQueue.push_back(firstZealot);
 	unitsQueue.push_back(secondZealot);
 	unitsQueue.push_back(thirdZealot);
+
+	zealotRush = true;
 
 	return true;
 }
@@ -1395,6 +1397,7 @@ BWAPI::Unit ProductionManager::getClosestEnemyNexus()
 	{
 		if (unit->getType().isResourceDepot())
 		{
+			
 			return unit;
 		}
 	}
