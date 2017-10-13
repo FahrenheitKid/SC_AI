@@ -45,9 +45,12 @@ public:
 
 	void makeIdleArmyAttack(int idle_amount);
 
+	//add unit to attack army
 	bool pushAttackArmy(Unit u);
 
+	//returns closets enemy nexus
 	BWAPI::Unit getClosestEnemyNexus();
+	//retrurns closest enemy
 	BWAPI::Unit getClosestEnemy(Unit u);
 	~CombatManager();
 

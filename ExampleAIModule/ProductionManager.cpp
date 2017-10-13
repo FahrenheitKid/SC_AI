@@ -72,7 +72,6 @@ void ProductionManager::updateResources()
 	if (Broodwar->self()->isDefeated() || Broodwar->self()->isVictorious()) return;
 	if (Broodwar->self()->getUnits().size() <= 0) return;
 
-	//int val = Broodwar->self()->getRace()->getWorker()->getType().mineralPrice();
 	//mineral sorting
 
 	setMinerals(Broodwar->self()->minerals());
@@ -129,12 +128,6 @@ void ProductionManager::updateResources()
 
 	//supply sorting
 	{
-		///max_supply -- 100 %
-		//supply --- x
-
-		// x max_supply == 100 supply
-		// x == (100 supply) / max_supply
-
 		if (getSupply() == 0 || getMaxSupply() == 0)
 			supply_percentage = 0;
 		else
@@ -205,20 +198,7 @@ int ProductionManager::buildSupply(int queueAmountThreshold)
 					TilePosition targetBuildLocation = Broodwar->getBuildLocation(supplyProviderType, supplyBuilder->getTilePosition());
 
 					bool isTooClose = false;
-					//check if position is too close of another building
 
-					/*
-					for (auto &b : Broodwar->self()->getUnits())
-					{
-					if (!b->exists() || !b || !targetBuildLocation) continue;
-
-					if (!b->getType().isBuilding()) continue;
-
-					if (targetBuildLocation.getApproxDistance(b->getTilePosition()) <= 10)
-					isTooClose = true;
-					}
-
-					*/
 					if (targetBuildLocation && !isTooClose)
 					{
 						// Register an event that draws the target build location
@@ -288,12 +268,9 @@ bool ProductionManager::isThereAvailableSupply()
 bool ProductionManager::isThereAvailableResourcesFor(UnitType u)
 {
 	if (!u) return false;
-	//if (!isThereAvailableGas() || !isThereAvailableMinerals() || !isThereAvailableSupply()) return false;
 
 	if ((u.mineralPrice() <= getAvailableMinerals()) && (u.gasPrice() <= getAvailableGas()) && (u.supplyRequired() / 2 <= getAvailableSupply()))
 	{
-		//setReserved_minerals(getReserved_minerals() + u.mineralPrice());
-		//reserved_gas += u.gasPrice();
 		return true;
 	}
 	else return false;
@@ -301,13 +278,8 @@ bool ProductionManager::isThereAvailableResourcesFor(UnitType u)
 
 bool ProductionManager::isThereAvailableResourcesFor(int mineral_cost, int gas_cost, int supply_cost)
 {
-	//if (!u) return false;
-	//if (!isThereAvailableGas() || !isThereAvailableMinerals() || !isThereAvailableSupply()) return false;
-
 	if ((mineral_cost <= getAvailableMinerals()) && (gas_cost <= getAvailableGas()) && (supply_cost <= getAvailableSupply()))
 	{
-		//setReserved_minerals(getReserved_minerals() + u.mineralPrice());
-		//reserved_gas += u.gasPrice();
 		return true;
 	}
 	else return false;
@@ -317,8 +289,6 @@ bool ProductionManager::isThereAvailableResourcesFor(UpgradeType t)
 {
 	if ((t.mineralPrice() <= getAvailableMinerals()) && (t.gasPrice() <= getAvailableGas()))
 	{
-		//setReserved_minerals(getReserved_minerals() + u.mineralPrice());
-		//reserved_gas += u.gasPrice();
 		return true;
 	}
 	else return false;
@@ -328,8 +298,6 @@ bool ProductionManager::isThereAvailableResourcesFor(TechType t)
 {
 	if ((t.mineralPrice() <= getAvailableMinerals()) && (t.gasPrice() <= getAvailableGas()))
 	{
-		//setReserved_minerals(getReserved_minerals() + u.mineralPrice());
-		//reserved_gas += u.gasPrice();
 		return true;
 	}
 	else return false;
@@ -395,12 +363,14 @@ void ProductionManager::update()
 		}
 	}
 
+	//only build refinery when have a lot of minerals so we dont  postpone rush
 	if (getMineralStatus() == PLENTY || getMineralStatus() == SOME)
 	{
 		///Broodwar << "IM RICH IM RICH IM RICH" << endl;
 
 		if (zealotRush)
 		{
+			//if in rush, only build refinery when there's nothing else to build
 			if (buildingsQueue.size() == 0)
 			{
 				searchAndBuildRefinery();
@@ -412,6 +382,7 @@ void ProductionManager::update()
 		}
 	}
 
+	//scout when supply gets 7
 	if (getSupply() >= 7)
 	{
 		Position p(0, 0);

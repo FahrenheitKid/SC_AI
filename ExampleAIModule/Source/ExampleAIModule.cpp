@@ -274,6 +274,5 @@ void ExampleAIModule::onUnitComplete(BWAPI::Unit unit)
 	if (prManager.isZealotRush() && unit->getType() == UnitTypes::Protoss_Zealot)
 	{
 		//Broodwar << "adicionou zealot na army" << endl;
-		
 	}
 }

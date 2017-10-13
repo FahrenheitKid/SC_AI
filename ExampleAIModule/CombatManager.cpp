@@ -24,19 +24,15 @@ void CombatManager::updateArmyQuantity()
 		if (!isThisUnitInThatVector(u, allArmy)) allArmy.push_back(u);
 	}
 
-
 	if (zealotRush)
 	{
 		for (auto &u : Broodwar->self()->getUnits())
 		{
 			if (!u || !u->exists() || u->getType() != UnitTypes::Protoss_Zealot) continue;
-			
 
-				if(!isThisUnitInThatVector(u, attackArmy))
-					attackArmy.push_back(u);
-			
+			if (!isThisUnitInThatVector(u, attackArmy))
+				attackArmy.push_back(u);
 		}
-		
 	}
 
 	for (int i = 0; i < attackSets.size(); i++)
@@ -95,10 +91,13 @@ void CombatManager::update()
 {
 	updateArmyQuantity();
 
+	//make idle units attack as troop
 	makeIdleArmyAttack(attackTroopSize);
 
+	//if zealotrush strat
 	if (zealotRush)
 	{
+		//fill attacksets
 		if (attackArmy.size() >= attackTroopSize)
 		{
 			Unitset u;
@@ -119,9 +118,6 @@ void CombatManager::update()
 		{
 			if (attackSets[i].size() >= attackTroopSize)
 			{
-				//attackSets[i].smartattack(getClosestEnemyNexus(), Broodwar->enemy()->getRace()->getWorker());
-
-				//attackSets[i].smartattack(getClosestEnemyNexus(), Broodwar->enemy()->getRace()->getWorker());
 				for (const auto& setUnit : attackSets[i])
 				{
 					if (!setUnit->exists()) continue;
@@ -135,44 +131,42 @@ void CombatManager::update()
 					if (!closest || !closest->exists()) continue;
 
 					lastEnemySeenPosition = closest->getPosition();
+					//attack the nexus or if cant find nexus and near nexus position, attack last seen enemy
 					if (nexDis <= 20 && closest->getType() != Broodwar->enemy()->getRace().getResourceDepot())
 					{
 						SmartAttackMove(setUnit, lastEnemySeenPosition);
 					}
 					else
 					{
-						
 						SmartAttackMove(setUnit, enemyBasePosition);
 					}
-					
 				}
 			}
 		}
 	}
 }
 
-
 void CombatManager::makeIdleArmyAttack(int idle_amount)
 {
-
 	int idle_count = 0;
 	vector<Unit> idles;
+	//fill with idle units
 	for (auto &a : allArmy)
 	{
 		if (!a->exists()) continue;
 
-		if (a->isIdle() || (!a->isAttacking() && !a->isMoving()) ) idles.push_back(a);
+		if (a->isIdle() || (!a->isAttacking() && !a->isMoving())) idles.push_back(a);
 	}
 
 	if (idles.size() > idle_amount) return;
 
+	//make idle units attack
 	for (auto &a : idles)
 	{
 		if (!a->exists()) continue;
 
 		if (idles.size() >= attackTroopSize)
 		{
-
 			if (!a->exists()) continue;
 
 			Position bias(0, 0);
@@ -184,13 +178,13 @@ void CombatManager::makeIdleArmyAttack(int idle_amount)
 			if (!closest || !closest->exists()) continue;
 
 			lastEnemySeenPosition = closest->getPosition();
+			//attack the nexus or if cant find nexus and near nexus position, attack last seen enemy
 			if (nexDis <= 20 && closest->getType() != Broodwar->enemy()->getRace().getResourceDepot())
 			{
 				SmartAttackMove(a, lastEnemySeenPosition);
 			}
 			else
 			{
-
 				SmartAttackMove(a, enemyBasePosition);
 			}
 		}
