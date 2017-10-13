@@ -1,3 +1,6 @@
+#ifndef PRODUCTION_H
+#define PRODUCTION_H
+
 #pragma once
 #include "Source\ExampleAIModule.h"
 #include <string>
@@ -33,20 +36,25 @@ private:
 
 	//buildings and units queue
 	vector <buildingInfo> buildingsQueue;
+	vector <buildingInfo> buildingsQueueBackup;
 	vector <unitInfo> unitsQueue;
 
 	//The next unit that we should create
 	buildingInfo nextBuidling;
 	unitInfo nextUnit;
 
-	bool isScounting;
-	bool holdScouting;
+
 	Unit scout;
+
 
 public:
 
 	Utilities util;
 	std::string hello;
+	Position lastEnemyBaseLocation;
+	bool isScounting;
+	bool holdScouting;
+
 	ProductionManager();
 
 	//make the same actions as the constructor
@@ -79,11 +87,15 @@ public:
 	//returns if a unit is disabled somehow or is constructing/being constructed
 	bool isUnitDisabled(Unit u);
 
-	
+	//add the standart build order to the queue
+	void pushStandartBuildingQueue();
 
 	void moveScouts();
 
+	//make a cybernetics core make dragoon upgrade
+	bool makeUpgradeAt(BWAPI::UpgradeType upgType, int supply_timing);
 
+	bool obtainNextUpgrade(BWAPI::UpgradeType upgType);
 	// all these are utility functions from ualbertabot !!
 	bool enemyWorkerInRadius();
 	BWAPI::Unit closestEnemyWorker();
@@ -93,6 +105,12 @@ public:
 	// returns true if there is available resources to build a unit
 	bool isThereAvailableResourcesFor(UnitType u);
 
+	//returns true if there is available resources for a set amount
+	bool isThereAvailableResourcesFor(int mineral_cost, int gas_cost, int supply_cost);
+	bool isThereAvailableResourcesFor(UpgradeType t);
+
+	bool isThereAvailableResourcesFor(TechType t);
+
 	//reserve the unit's mineral and gas amount
 	bool reserveUnitPrice(UnitType u);
 
@@ -100,6 +118,7 @@ public:
 	bool dereserveUnitPrice(UnitType u);
 
 	void update();
+
 	BWAPI::Unit getClosestEnemyNexus();
 	//choose a worker and send it to scout;
 	bool sendScout();
@@ -137,6 +156,9 @@ public:
 
 	//follows the units order list, creating the units when the time comes
 	void followUnitOrder();
+
+	//rebuilds initial buildings if they got destroyed
+	void rebuildBackup();
 
 	int getRefineriesAmount();
 	/*get and sets functions*/
@@ -182,6 +204,7 @@ public:
 	//decrements the first unit/building in the queue
 	bool decrementFirstInQueueOrder(Unit u);
 
+	//check if a unit is in queue order
 	bool isUnitInQueueOrder(Unit u);
 
 	buildingInfo getNextBuidling() const { return nextBuidling; }
@@ -193,4 +216,7 @@ public:
 	void resetScout() { scout = nullptr; isScounting = false; };
 	bool isZealotRush() { return zealotRush; }
 	BWAPI::Unit getPossibleScout(UnitType type);
+	BWAPI::Position getLastEnemyBaseLocation() const { return lastEnemyBaseLocation; }
+	void setLastEnemyBaseLocation(BWAPI::Position val) { lastEnemyBaseLocation = val; }
 };
+#endif

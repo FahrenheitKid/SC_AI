@@ -12,6 +12,7 @@ ProductionManager::ProductionManager()
 	setMaxSupply(9);
 	supply_percentage = 0;
 	hold_worker_production = false;
+	zealotRush = false;
 
 	if (!race)
 		race = Broodwar->self()->getRace();
@@ -29,6 +30,9 @@ ProductionManager::ProductionManager()
 
 void ProductionManager::constructorInit()
 {
+
+	lastEnemyBaseLocation = Position::Point(0, 0);
+
 	speedtest = 1;
 	hello = "Hello World";
 	ProductionManager::setGas(0);
@@ -56,11 +60,11 @@ void ProductionManager::constructorInit()
 	if (setSneakTemplarsQueues()) Broodwar << "QUEUE  TEMPLAR SETADA " << endl;
 	else Broodwar << "QUEUE ERROR " << endl;
 	*/
-	
+
 	if (setZealotRushQueues()) Broodwar << "QUEUE  zealot SETADA " << endl;
 	else Broodwar << "QUEUE ERROR " << endl;
-	
-	
+
+	buildingsQueueBackup = buildingsQueue;
 }
 
 void ProductionManager::updateResources()
@@ -165,6 +169,7 @@ void ProductionManager::updateResources()
 int ProductionManager::buildSupply(int queueAmountThreshold)
 {
 	if (Broodwar->self()->isDefeated() || Broodwar->self()->isVictorious()) return 0;
+	if (max_supply >= 200) return 0;
 
 	if (!isThereAvailableResourcesFor(race.getSupplyProvider())) return 0;
 
@@ -199,8 +204,29 @@ int ProductionManager::buildSupply(int queueAmountThreshold)
 				if (supplyProviderType.isBuilding())
 				{
 					TilePosition targetBuildLocation = Broodwar->getBuildLocation(supplyProviderType, supplyBuilder->getTilePosition());
-					if (targetBuildLocation)
+
+					bool isTooClose = false;
+					//check if position is too close of another building
+
+					/*
+					for (auto &b : Broodwar->self()->getUnits())
 					{
+					if (!b->exists() || !b || !targetBuildLocation) continue;
+
+					if (!b->getType().isBuilding()) continue;
+
+
+
+					if (targetBuildLocation.getApproxDistance(b->getTilePosition()) <= 10)
+					isTooClose = true;
+					}
+
+					*/
+					if (targetBuildLocation && !isTooClose)
+					{
+
+
+
 						// Register an event that draws the target build location
 						Broodwar->registerEvent([targetBuildLocation, supplyProviderType](Game*)
 						{
@@ -279,6 +305,42 @@ bool ProductionManager::isThereAvailableResourcesFor(UnitType u)
 	else return false;
 }
 
+bool ProductionManager::isThereAvailableResourcesFor(int mineral_cost, int gas_cost, int supply_cost)
+{
+	//if (!u) return false;
+	//if (!isThereAvailableGas() || !isThereAvailableMinerals() || !isThereAvailableSupply()) return false;
+
+	if ((mineral_cost <= getAvailableMinerals()) && (gas_cost <= getAvailableGas()) && (supply_cost <= getAvailableSupply()))
+	{
+		//setReserved_minerals(getReserved_minerals() + u.mineralPrice());
+		//reserved_gas += u.gasPrice();
+		return true;
+	}
+	else return false;
+}
+
+bool ProductionManager::isThereAvailableResourcesFor(UpgradeType t)
+{
+	if ((t.mineralPrice() <= getAvailableMinerals()) && (t.gasPrice() <= getAvailableGas()))
+	{
+		//setReserved_minerals(getReserved_minerals() + u.mineralPrice());
+		//reserved_gas += u.gasPrice();
+		return true;
+	}
+	else return false;
+}
+
+
+bool ProductionManager::isThereAvailableResourcesFor(TechType t)
+{
+	if ((t.mineralPrice() <= getAvailableMinerals()) && (t.gasPrice() <= getAvailableGas()))
+	{
+		//setReserved_minerals(getReserved_minerals() + u.mineralPrice());
+		//reserved_gas += u.gasPrice();
+		return true;
+	}
+	else return false;
+}
 bool ProductionManager::reserveUnitPrice(UnitType u)
 {
 	if (!u) return false;
@@ -322,6 +384,12 @@ void ProductionManager::update()
 	if (Broodwar->self()->isDefeated() || Broodwar->self()->isVictorious()) return;
 	if (Broodwar->self()->getUnits().size() <= 0) return;
 
+
+
+
+	//makeUpgradeAt(UpgradeTypes::Singularity_Charge, 15);
+	//makeUpgradeAt(UpgradeTypes::Leg_Enhancements, 20);
+
 	updateResources();
 	makeAllIdlesWork(getRefineriesAmount());
 	updateResources();
@@ -340,15 +408,28 @@ void ProductionManager::update()
 	if (getMineralStatus() == PLENTY || getMineralStatus() == SOME)
 	{
 		///Broodwar << "IM RICH IM RICH IM RICH" << endl;
-		searchAndBuildRefinery();
 
-		
+
+		if (zealotRush)
+		{
+			if (buildingsQueue.size() == 0)
+			{
+				searchAndBuildRefinery();
+			}
+		}
+		else
+		{
+			searchAndBuildRefinery();
+
+		}
+
+
 	}
 
 	if (getSupply() >= 7)
 	{
-		
-		if (!isScounting && !holdScouting)
+		Position p(0, 0);
+		if (!holdScouting)
 			sendScout();
 
 	}
@@ -385,28 +466,10 @@ bool ProductionManager::sendScout()
 		setScout(hold);
 		moveScouts();
 	}
-	
-	//Broodwar << "mandou mover scouts" << endl;
-	
-	/*
-	if (getScout()->getShields() <= 5)
-	{
-	Unit target = getScout()->getClosestUnit(Filter::IsResourceDepot && Filter::IsOwned);
 
-	getScout()->move(target->getPosition());
 
-	}
-
-	Unit enemyNexus = getScout()->getClosestUnit(Filter::IsResourceDepot && Filter::IsEnemy);
-
-	//não achou ainda
-	if (!enemyNexus || !enemyNexus->exists())
-	{
-	getScout()->move()
-	}
-	*/
 	return true;
-	
+
 
 }
 
@@ -513,6 +576,32 @@ void ProductionManager::makeIdleNexusBuildWorkers()
 	if (Broodwar->self()->isDefeated() || Broodwar->self()->isVictorious()) return;
 
 	if (!isThereAvailableResourcesFor(race.getWorker())) return;
+
+	if (buildingsQueue.size() > 0)
+	{
+		int mineral_needed = 0;
+		int gas_needed = 0;
+		int supply_needed = 0;
+
+
+		for (auto &b : buildingsQueue)
+		{
+			if (b.quantity >= 1)
+			{
+				int eminent = b.supply_timing - getSupply();
+				if (eminent >= 0)
+				{
+
+					mineral_needed += b.building.mineralPrice();
+					gas_needed = b.building.gasPrice();
+					supply_needed = b.building.supplyRequired() / 2;
+				}
+			}
+		}
+
+		//if (!isThereAvailableResourcesFor(mineral_needed, gas_needed, supply_needed)) return;
+
+	}
 
 	for (auto &u : Broodwar->self()->getUnits())
 	{
@@ -687,8 +776,8 @@ bool ProductionManager::makeWorkerBuild(UnitType unitToBuild, int queueAmountThr
 	// Iterate through all the units that we own
 	for (auto &u : Broodwar->self()->getUnits())
 	{
-		if (!u->exists() || !u ) continue;
-		
+		if (!u->exists() || !u) continue;
+
 		Position pos = u->getPosition();
 		Error lastErr = Broodwar->getLastError();
 		Broodwar->registerEvent([pos, lastErr](Game*) { Broodwar->drawTextMap(pos, "%c%s", Text::White, lastErr.c_str()); },   // action
@@ -774,7 +863,7 @@ bool ProductionManager::makeSomeBuildingBuild(UnitType unitToBuild, int queueAmo
 		// and there arent more than X other units already building it
 		//and training queue is not full or is idle
 
-		
+
 		//if it can build the unit and is complete
 		/*
 		*/
@@ -784,41 +873,41 @@ bool ProductionManager::makeSomeBuildingBuild(UnitType unitToBuild, int queueAmo
 			if (!isThereAvailableResourcesFor(unitToBuild)) continue;
 
 			count++;
-				//Broodwar << "achou gateway idle ID: " + to_string(count)  << endl;
-					if (!u->train(unitToBuild))
-					{
-						// If that fails, draw the error at the location so that you can visibly see what went wrong!
-						// However, drawing the error once will only appear for a single frame
-						// so create an event that keeps it on the screen for some frames
-						Position pos = u->getPosition();
-						Error lastErr = Broodwar->getLastError();
-						Broodwar->registerEvent([pos, lastErr](Game*) { Broodwar->drawTextMap(pos, "%c%s", Text::White, lastErr.c_str()); },   // action
-							nullptr,    // condition
-							Broodwar->getLatencyFrames());  // frames to run
+			//Broodwar << "achou gateway idle ID: " + to_string(count)  << endl;
+			if (!u->train(unitToBuild))
+			{
+				// If that fails, draw the error at the location so that you can visibly see what went wrong!
+				// However, drawing the error once will only appear for a single frame
+				// so create an event that keeps it on the screen for some frames
+				Position pos = u->getPosition();
+				Error lastErr = Broodwar->getLastError();
+				Broodwar->registerEvent([pos, lastErr](Game*) { Broodwar->drawTextMap(pos, "%c%s", Text::White, lastErr.c_str()); },   // action
+					nullptr,    // condition
+					Broodwar->getLatencyFrames());  // frames to run
 
 
-					} // closure: failed to train idle unit
-					else
-					{
-						//Broodwar << "go train Zealot" << endl;
-						if (isThereAvailableResourcesFor(unitToBuild))
-						{
-							reserveUnitPrice(unitToBuild);
-						}
-							
+			} // closure: failed to train idle unit
+			else
+			{
+				//Broodwar << "go train Zealot" << endl;
+				if (isThereAvailableResourcesFor(unitToBuild))
+				{
+					reserveUnitPrice(unitToBuild);
+				}
 
-						createdAtLeastOne = true;
-					}
-				
-				
-			
-			
-			
+
+				createdAtLeastOne = true;
+			}
+
+
+
+
+
 		}
-	
+
 	}// closure: unit iterator
 
-	
+
 	return createdAtLeastOne;
 }
 
@@ -864,8 +953,8 @@ void ProductionManager::searchAndBuildRefinery()
 			lastChecked = Broodwar->getFrameCount();
 			Unit refineryBuilder;
 
-			if(u->exists() || u)
-			refineryBuilder = u->getClosestUnit(GetType == refineryType.whatBuilds().first &&
+			if (u->exists() || u)
+				refineryBuilder = u->getClosestUnit(GetType == refineryType.whatBuilds().first &&
 				(IsIdle || IsGatheringMinerals) && IsOwned);
 
 			if (refineryBuilder && refineryBuilder->exists() && refineryBuilder->isCompleted() && !refineryBuilder->isConstructing() && !isScout(u))
@@ -911,7 +1000,7 @@ void ProductionManager::searchAndBuildRefinery()
 
 				}
 			}
-			
+
 		}
 	}
 }
@@ -944,9 +1033,9 @@ void ProductionManager::followBuildingOrder()
 			if (isThereAvailableResourcesFor(nextBuidling.building))
 			{
 				//make a worker build that building, if the quantity is more than one, it will construct even if its already being build somewhere
-				
-				if(nextBuidling.quantity >= 1)
-				makeWorkerBuild(nextBuidling.building, nextBuidling.quantity - 1);
+
+				if (nextBuidling.quantity >= 1)
+					makeWorkerBuild(nextBuidling.building, nextBuidling.quantity - 1);
 			}
 		}
 	}
@@ -997,6 +1086,15 @@ void ProductionManager::followUnitOrder()
 
 }
 
+void ProductionManager::rebuildBackup()
+{
+	for (auto &bd : buildingsQueueBackup)
+	{
+		//if(Broodwar->self()->allUnitCount())
+
+	}
+}
+
 //returns the amount of refineries that we own
 int ProductionManager::getRefineriesAmount()
 {
@@ -1041,6 +1139,7 @@ bool ProductionManager::decrementFirstBuildingInQueueOrder(Unit u)
 	{
 		if (buildingsQueue[i].building == u->getType() && buildingsQueue[i].quantity >= 1)
 		{
+			//Broodwar << "decrementei" << endl;
 			decremented = true;
 			buildingsQueue[i].quantity--;
 			break;
@@ -1136,29 +1235,29 @@ BWAPI::Unit ProductionManager::getPossibleScout(UnitType type)
 	{
 		if (!u->exists())
 		{
-			 continue;
+			continue;
 		}
 		// if doesnt exists or disabled or not the type that we want
 		if (u->getType() != type)
 		{
-			Broodwar << "scout NON worker " << endl;
+			//Broodwar << "scout NON worker " << endl;
 			continue;
 		}
-		
+
 
 		//if worker and carrying gas
-		if ( u->isCarryingGas() || !u->isCompleted() || u->isConstructing()) 
+		if (u->isCarryingGas() || !u->isCompleted() || u->isConstructing() || u->isCarryingMinerals() || u->getHitPoints() <= 5)
 		{
-			Broodwar << "scout GAS CONSTRUCTING INCOMPLETE" << endl;
+			//Broodwar << "scout GAS CONSTRUCTING INCOMPLETE" << endl;
 			continue;
 		}
 
-		
+
 		return u;
-		
+
 	}
 
-	
+
 	return nullptr;
 }
 
@@ -1180,19 +1279,19 @@ unsigned int ProductionManager::getAvailableGas() const
 bool ProductionManager::isUnitDisabled(Unit u)
 {
 
-	
+
 
 	if (!Broodwar->self()) return false;
 
 	if (!u->exists())
-	return true;
+		return true;
 
 	if (Broodwar->self()->isDefeated() || Broodwar->self()->isVictorious()) return false;
 	if (Broodwar->self()->getUnits().size() <= 0) return false;
 
 	// Ignore the unit if it no longer exists
 	// Make sure to include this block when handling any Unit pointer!
-	
+
 
 	// Ignore the unit if it has one of the following status ailments
 	if (u->isLockedDown() || u->isMaelstrommed() || u->isStasised())
@@ -1207,6 +1306,64 @@ bool ProductionManager::isUnitDisabled(Unit u)
 		return true;
 
 	return false;
+}
+
+void ProductionManager::pushStandartBuildingQueue()
+{
+	//if (!buildingsQueue.empty()) continue;
+
+	buildingInfo cyberneticCore;
+	cyberneticCore.building = UnitTypes::Protoss_Cybernetics_Core;
+	cyberneticCore.supply_timing = 13;
+	cyberneticCore.quantity = 1;
+
+
+	buildingInfo forge;
+	forge.building = UnitTypes::Protoss_Forge;
+	forge.supply_timing = 20;
+	forge.quantity = 1;
+
+	buildingInfo citadel;
+	citadel.building = UnitTypes::Protoss_Citadel_of_Adun;
+	citadel.supply_timing = 25;
+	citadel.quantity = 1;
+
+	buildingInfo arch;
+	arch.building = UnitTypes::Protoss_Templar_Archives;
+	arch.supply_timing = 25;
+	arch.quantity = 1;
+
+	unitInfo firstDragoon;
+	firstDragoon.unit = UnitTypes::Protoss_Dragoon;
+	firstDragoon.supply_timing = 15;
+	firstDragoon.quantity = 1;
+
+	unitInfo secondsDragoon;
+	secondsDragoon.unit = UnitTypes::Protoss_Dragoon;
+	secondsDragoon.supply_timing = 17;
+	secondsDragoon.quantity = 2;
+
+
+	buildingsQueue.push_back(cyberneticCore);
+
+	buildingsQueue.push_back(forge);
+
+	buildingsQueue.push_back(citadel);
+
+	buildingsQueue.push_back(arch);
+
+	unitsQueue.push_back(firstDragoon);
+
+	unitsQueue.push_back(secondsDragoon);
+
+
+	buildingsQueueBackup.push_back(cyberneticCore);
+
+	buildingsQueueBackup.push_back(forge);
+
+	buildingsQueueBackup.push_back(citadel);
+
+	buildingsQueueBackup.push_back(arch);
 }
 
 void ProductionManager::smartMove(BWAPI::Unit attacker, BWAPI::Position targetPosition)
@@ -1239,20 +1396,8 @@ void ProductionManager::moveScouts()
 	}
 
 	bool scoutUnderAttack = false;
-	
-	// get the enemy base location, if we have one
-	//BWAPI::BaseLocation  enemyBaseLocation = UnitInfoState::getInstance()->getMainBaseLocation(BWAPI::Broodwar->enemy());
 
-	/*
-	Unit enemyBaseLocation = getScout()->getClosestUnit(Filter::IsResourceDepot && Filter::IsEnemy);
-	// determine the region that the enemy is in
-	BWAPI::Region  enemyRegion = enemyBaseLocation ? enemyBaseLocation->getRegion() : NULL;
 
-	// determine the region the scout is in
-	BWAPI::TilePosition scoutTile(getScout()->getPosition());
-	BWAPI::Region  scoutRegion = scoutTile.isValid() ? getScout()->getRegion() : NULL;
-	*/
-	
 
 	// we only care if the scout is under attack within the enemy region
 	// this ignores if their scout worker attacks it on the way to their base
@@ -1266,63 +1411,12 @@ void ProductionManager::moveScouts()
 		scoutUnderAttack = false;
 	}
 
-	/*
+	//if (scoutUnderAttack) holdScouting = true;
+	//else holdScouting = true;
 
-	// if we know where the enemy region is and where our scout is
-	if (enemyRegion && scoutRegion)
-	{
-	// if the scout is in the enemy region
-	if (scoutRegion == enemyRegion)
-	{
-	//std::vector<GroundThreat> groundThreats;
-	//fillGroundThreats(groundThreats, workerScout->getPosition());
-
-	// get the closest enemy worker
-	BWAPI::Unit closestWorker = closestEnemyWorker();
-
-	// if the worker scout is not under attack
-	if (!scoutUnderAttack)
-	{
-	// if there is a worker nearby, harass it
-	if (closestWorker && (getScout()->getDistance(closestWorker) < 800))
-	{
-	getScout()->attack(closestWorker);
-	}
-	// otherwise keep moving to the enemy region
-	else
-	{
-	// move to the enemy region
-	smartMove(getScout(), enemyBaseLocation->getPosition());
-	}
-
-	}
-	// if the worker scout is under attack
-	else
-	{
-	Unit ourNexus = getScout()->getClosestUnit(Filter::IsResourceDepot && Filter::IsOwned);
-
-	//getScout()->move(target->getPosition());
-
-	smartMove(getScout(), ourNexus->getPosition());
-	}
-	}
-	// if the scout is not in the enemy region
-	else if (scoutUnderAttack)
-	{
-	smartMove(getScout(), BWAPI::Position(BWAPI::Broodwar->self()->getStartLocation()));
-	}
-	else
-	{
-	// move to the enemy region
-	smartMove(getScout(), enemyBaseLocation->getPosition());
-	}
-
-	}
-	*/
-	
-
+	Position bias(0, 0);
 	// for each start location in the level
-	if (!getClosestEnemyNexus())
+	if (!getClosestEnemyNexus() && lastEnemyBaseLocation == bias)
 	{
 		Broodwar << "nao achou nexus" << endl;
 		for (auto & u : BWAPI::Broodwar->getStartLocations())
@@ -1337,8 +1431,69 @@ void ProductionManager::moveScouts()
 			}
 		}
 	}
+	else
+	{
+
+	}
+
+	/*if (scout->exists() && scout->getClosestUnit()->getPlayer()->isEnemy(Broodwar->self()))
+	{
+	int x = scout->getClosestUnit()->getPosition().x;
+	int y = scout->getClosestUnit()->getPosition().y;
+	Broodwar << "Setei last enemy como: (" + to_string(x) + ", " + to_string(y) + ")" << endl;
+	lastEnemyBaseLocation = scout->getClosestUnit()->getPosition();
+	}*/
 }
 
+bool ProductionManager::makeUpgradeAt(UpgradeType upgType, int supply_timing)
+{
+
+	if (getSupply() < supply_timing || Broodwar->self()->isUpgrading(upgType)) return false;
+
+
+	for (auto &u : Broodwar->self()->getUnits())
+	{
+		if (!u->exists())
+		{
+			continue;
+		}
+
+		// if it is not a the type that upgrades it
+		if (u->getType() != upgType.whatUpgrades())
+		{
+
+			continue;
+		}
+		else
+		{
+			if (!u->isCompleted() || u->isConstructing() || u->isUpgrading() || !isThereAvailableResourcesFor(upgType)) continue;
+
+			if (u->upgrade(upgType))
+			{
+				return true;
+			}
+
+
+		}
+
+
+	}
+
+	return false;
+}
+
+
+bool ProductionManager::obtainNextUpgrade(BWAPI::UpgradeType upgType)
+{
+	BWAPI::Player self = BWAPI::Broodwar->self();
+	int maxLvl = self->getMaxUpgradeLevel(upgType);
+	int currentLvl = self->getUpgradeLevel(upgType);
+	if (!self->isUpgrading(upgType) && currentLvl < maxLvl &&
+		self->completedUnitCount(upgType.whatsRequired(currentLvl + 1)) > 0 &&
+		self->completedUnitCount(upgType.whatUpgrades()) > 0)
+		return true; // self->getUnits().upgrade(upgType);
+	return false;
+}
 bool ProductionManager::enemyWorkerInRadius()
 {
 	for (auto & unit : BWAPI::Broodwar->enemy()->getUnits())
@@ -1375,8 +1530,8 @@ BWAPI::Unit ProductionManager::closestEnemyWorker()
 		{
 			double dist = 0;
 			Unit geyser = unit->getClosestUnit(Filter::IsRefinery);
-			if(geyser && geyser->exists())
-			dist = unit->getDistance(geyser);
+			if (geyser && geyser->exists())
+				dist = unit->getDistance(geyser);
 
 			if (dist < 800 && dist > maxDist)
 			{
@@ -1397,7 +1552,7 @@ BWAPI::Unit ProductionManager::getClosestEnemyNexus()
 	{
 		if (unit->getType().isResourceDepot())
 		{
-			
+
 			return unit;
 		}
 	}

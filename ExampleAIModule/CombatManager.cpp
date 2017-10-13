@@ -21,22 +21,22 @@ void CombatManager::updateArmyQuantity()
 
 		if (u->getType().isBuilding() || !u->isCompleted() || u->isConstructing()) continue;
 
-		if (u->canAttack()) allArmy.push_back(u);
+		if (!isThisUnitInThatVector(u,allArmy)) allArmy.push_back(u);
 	}
 
 	
 	//update dps values
-	for (int i = 0; i < getAttackArmy().size(); i++)
+	for (int i = 0; i < attackArmy.size(); i++)
 	{
 		if(i == 0) attackArmy_DPS = 0;
 
-		if (getAttackArmy()[i] == nullptr || !getAttackArmy()[i]->exists())
+		if (attackArmy[i] == nullptr || !attackArmy[i]->exists())
 		{
-			getAttackArmy().erase(getAttackArmy().begin() + i);
+			attackArmy.erase(attackArmy.begin() + i);
 			i = 0;
 			continue;
 		}
-		attackArmy_DPS += getAttackArmy()[i]->getType().maxGroundHits();
+		attackArmy_DPS += attackArmy[i]->getType().maxGroundHits();
 
 	}
 
@@ -79,34 +79,34 @@ void CombatManager::update()
 	if (zealotRush)
 	{
 
-		if (getAttackArmy().size() >= 5)
+		if (attackArmy.size() >= 5)
 		{
 			Unitset u;
-			for (int i = 0; i < getAttackArmy().size(); i++)
+			for (int i = 0; i < attackArmy.size(); i++)
 			{
 				if (u.size() < 5)
 				{
-					u.insert(getAttackArmy()[i]);
+					u.insert(attackArmy[i]);
 				}
 			}
 
-			if(getAttackArmy().size() >= 5)
-			getAttackSets().push_back(u);
+			if(attackArmy.size() >= 5)
+			attackSets.push_back(u);
 		}
 
 		//check for sets that can attack
-		for (int i = 0; i < getAttackSets().size(); i++)
+		for (int i = 0; i < attackSets.size(); i++)
 		{
-			if (getAttackSets()[i].size() >= 5)
+			if (attackSets[i].size() >= 5)
 			{
 				//attackSets[i].smartattack(getClosestEnemyNexus(), Broodwar->enemy()->getRace()->getWorker());
 
 				//attackSets[i].smartattack(getClosestEnemyNexus(), Broodwar->enemy()->getRace()->getWorker());
-				for (const auto& setUnit : getAttackSets()[i])
+				for (const auto& setUnit : attackSets[i])
 				{
 					if (!setUnit->exists()) continue;
 				
-					SmartAttackMove(setUnit, getClosestEnemyNexus()->getPosition());
+					SmartAttackMove(setUnit, enemyBasePosition);
 				}
 				
 
@@ -120,7 +120,7 @@ bool CombatManager::pushAttackArmy(Unit u)
 {
 	if (!u || !u->exists()) return false;
 
-	getAttackArmy().push_back(u);
+	attackArmy.push_back(u);
 
 	updateArmyQuantity();
 	return true;
@@ -169,7 +169,7 @@ void CombatManager::SmartAttackUnit(BWAPI::Unit attacker, BWAPI::Unit target)
 	
 }
 
-void CombatManager::SmartAttackMove(BWAPI::Unit attacker, const BWAPI::Position & targetPosition)
+void CombatManager::SmartAttackMove(BWAPI::Unit attacker, const BWAPI::Position  targetPosition)
 {
 	//UAB_ASSERT(attacker, "SmartAttackMove: Attacker not valid");
 	//UAB_ASSERT(targetPosition.isValid(), "SmartAttackMove: targetPosition not valid");
@@ -199,7 +199,7 @@ void CombatManager::SmartAttackMove(BWAPI::Unit attacker, const BWAPI::Position 
 	
 }
 
-void CombatManager::SmartMove(BWAPI::Unit attacker, const BWAPI::Position & targetPosition)
+void CombatManager::SmartMove(BWAPI::Unit attacker, const BWAPI::Position  targetPosition)
 {
 	//UAB_ASSERT(attacker, "SmartAttackMove: Attacker not valid");
 	//UAB_ASSERT(targetPosition.isValid(), "SmartAttackMove: targetPosition not valid");
@@ -228,6 +228,51 @@ void CombatManager::SmartMove(BWAPI::Unit attacker, const BWAPI::Position & targ
 	attacker->move(targetPosition);
 	
 }
+
+bool CombatManager::isThisUnitInThatVector(Unit u, std::vector<BWAPI::Unit> val)
+{
+	if (!u || !u->exists() || val.empty()) return false;
+
+	for (int i = 0; i < val.size(); i++)
+	{
+		if (u == val[i]) return true;
+	}
+
+	return false;
+}
+
+bool CombatManager::isThisUnitInThatVector(Unitset u, std::vector<BWAPI::Unitset> val)
+{
+	if (u.empty() || val.empty()) return false;
+
+	for (int i = 0; i < val.size(); i++)
+	{
+		if (u == val[i]) return true;
+	}
+
+	return false;
+}
+
+bool CombatManager::isThisUnitInThatUnisetVector(Unit u, std::vector<BWAPI::Unitset> val)
+{
+	if (!u->exists() || val.empty()) return false;
+
+	for (int i = 0; i < val.size(); i++)
+	{
+		for (const auto& setUnit : val[i])
+		{
+			if (!setUnit->exists()) continue;
+
+			if (setUnit == u) return true;
+
+			//if(getClosestEnemyNexus()->exists() && setUnit->exists())
+			//SmartAttackMove(setUnit, getClosestEnemyNexus()->getPosition());
+		}
+	}
+
+	return false;
+}
+
 CombatManager::~CombatManager()
 {
 }

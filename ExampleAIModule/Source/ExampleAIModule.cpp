@@ -17,17 +17,18 @@ void ExampleAIModule::onStart()
 
 	Broodwar->sendText(prManager.hello.c_str());
 
+	//here we initialize the managers
 	prManager.constructorInit();
 	sManager.init(prManager);
 	cManager.init(prManager);
 
-	Broodwar->setLocalSpeed(10);
+	Broodwar->setLocalSpeed(0);
 	// Print the map name.
 	// BWAPI returns std::string when retrieving a string, don't forget to add .c_str() when printing!
 	Broodwar << "The map is " << Broodwar->mapName() << "!" << std::endl;
 
 	// Enable the UserInput flag, which allows us to control the bot and type messages.
-	//Broodwar->enableFlag(Flag::UserInput);
+	Broodwar->enableFlag(Flag::UserInput);
 
 	// Uncomment the following line and the bot will know about everything through the fog of war (cheat).
 	//Broodwar->enableFlag(Flag::CompleteMapInformation);
@@ -58,6 +59,9 @@ void ExampleAIModule::onStart()
 		if (Broodwar->enemy()) // First make sure there is an enemy
 			Broodwar << "The matchup is " << Broodwar->self()->getRace() << " vs " << Broodwar->enemy()->getRace() << std::endl;
 	}
+
+	//prManager.pushStandartBuildingQueue();
+
 }
 
 void ExampleAIModule::onEnd(bool isWinner)
@@ -77,10 +81,10 @@ void ExampleAIModule::onFrame()
 	// Display the game frame rate as text in the upper left area of the screen
 	Broodwar->drawTextScreen(200, 0, texttest.c_str(), Broodwar->getFPS());
 	Broodwar->drawTextScreen(200, 20, "Average FPS: %f", Broodwar->getAverageFPS());
-	Broodwar->drawTextScreen(200, 40, "Supply_status: %d", prManager.getSupplyStatus());
-	Broodwar->drawTextScreen(100, 60, "reserved_minerals: %d | Minerals: %d", prManager.getReservedMinerals(), prManager.getMinerals());
-	Broodwar->drawTextScreen(50, 80, "attackArmySize: %d | AttackSetsSize: %d", cManager.getAttackArmy().size(), cManager.getAttackSets().size());
-
+	Broodwar->drawTextScreen(200, 40, "reserved_minerals: %d | Minerals: %d", prManager.getReservedMinerals(), prManager.getMinerals());
+	Broodwar->drawTextScreen(50, 60, "attackArmySize: %d | AttackSetsSize: %d | AllArmySize: %d", cManager.attackArmy.size(), cManager.attackSets.size(), cManager.allArmy.size());
+	Broodwar->drawTextScreen(50, 800, "EnemyUnitsCount: %d | EnemyNexusCount: %d | EnemyWorkerCount: %d", Broodwar->enemy()->allUnitCount(), Broodwar->enemy()->allUnitCount(Broodwar->enemy()->getRace().getResourceDepot()), Broodwar->enemy()->allUnitCount(Broodwar->enemy()->getRace().getWorker()));
+	Broodwar->drawTextScreen(50, 100, "enemyBase: (%d , %d) | lastEnemyBase: (%d , %d)", cManager.enemyBasePosition.x, cManager.enemyBasePosition.y, prManager.lastEnemyBaseLocation.x, prManager.lastEnemyBaseLocation.y);
 	if (prManager.getBuildingsQueue().size() > 0)
 	{
 		buildingInfo nextB = prManager.getBuildingsQueue().front();
@@ -106,9 +110,32 @@ void ExampleAIModule::onFrame()
 	if (Broodwar->getFrameCount() % Broodwar->getLatencyFrames() != 0)
 		return;
 
-	// Called once every game frame
+	// here the main update functions execute and make the bot alive!
 	prManager.update();
 	cManager.update();
+
+
+	//this part updates the last enemy nexus position in managers
+	if (Broodwar->enemy()->allUnitCount() > 0)
+	{
+
+		for (auto &u : Broodwar->enemy()->getUnits())
+		{
+			if (!u->exists()) continue;
+			if (u->getType() == Broodwar->enemy()->getRace().getResourceDepot())
+			{
+				//Broodwar << "achei nexus" << endl;
+				int x = u->getPosition().x;
+				int y = u->getPosition().y;
+				//Broodwar << "OnFrame::last enemy set: (" + to_string(x) + ", " + to_string(y) + ")" << endl;
+				cManager.enemyBasePosition = u->getPosition();
+				prManager.lastEnemyBaseLocation = u->getPosition();
+			}
+
+		}
+
+	}
+
 }
 
 void ExampleAIModule::onSendText(std::string text)
@@ -183,6 +210,25 @@ void ExampleAIModule::onUnitCreate(BWAPI::Unit unit)
 
 void ExampleAIModule::onUnitDestroy(BWAPI::Unit unit)
 {
+	if (!unit->exists()) return;
+
+	if (unit->getPlayer()->isEnemy(Broodwar->self()))
+	{
+		//if we killed a nexus search for the next one
+		if (unit->getPlayer()->getRace().getResourceDepot() == unit->getType())
+		{
+			//prManager.holdScouting = false;
+		}
+
+	}
+	else
+	{
+		if ((cManager.attackTroopSize + 1 + Broodwar->self()->completedUnitCount(Broodwar->self()->getRace().getWorker())) < 190)
+			cManager.attackTroopSize++;
+
+	}
+
+
 }
 
 void ExampleAIModule::onUnitMorph(BWAPI::Unit unit)
@@ -221,7 +267,7 @@ void ExampleAIModule::onUnitComplete(BWAPI::Unit unit)
 	//we should remove the reserved resources for that unit once it is completed/finally created
 	if (prManager.dereserveUnitPrice(unit->getType()))
 	{
-		
+
 
 		//if that unit was the next building to create in the build order queue, we should decrement it from there
 		if (prManager.isUnitInQueueOrder(unit))
@@ -232,11 +278,16 @@ void ExampleAIModule::onUnitComplete(BWAPI::Unit unit)
 			}
 		}
 		//	Broodwar << "desreservou UM " + unit->getType().getName() << endl;
-		
+
 	}
 
+	//if we are making zealot rush and it is zealot, add them to the army
 	if (prManager.isZealotRush() && unit->getType() == UnitTypes::Protoss_Zealot)
 	{
-		cManager.pushAttackArmy(unit);
+		//Broodwar << "adicionou zealot na army" << endl;
+		if(!cManager.isThisUnitInThatVector(unit,cManager.attackArmy))
+		cManager.attackArmy.push_back(unit);
+		cManager.updateArmyQuantity();
+
 	}
 }
