@@ -61,7 +61,6 @@ void ExampleAIModule::onStart()
 	}
 
 	//prManager.pushStandartBuildingQueue();
-
 }
 
 void ExampleAIModule::onEnd(bool isWinner)
@@ -114,11 +113,9 @@ void ExampleAIModule::onFrame()
 	prManager.update();
 	cManager.update();
 
-
 	//this part updates the last enemy nexus position in managers
 	if (Broodwar->enemy()->allUnitCount() > 0)
 	{
-
 		for (auto &u : Broodwar->enemy()->getUnits())
 		{
 			if (!u->exists()) continue;
@@ -134,10 +131,7 @@ void ExampleAIModule::onFrame()
 
 			cManager.lastEnemySeenPosition = u->getPosition();
 		}
-
-		
 	}
-
 }
 
 void ExampleAIModule::onSendText(std::string text)
@@ -221,16 +215,12 @@ void ExampleAIModule::onUnitDestroy(BWAPI::Unit unit)
 		{
 			//prManager.holdScouting = false;
 		}
-
 	}
 	else
 	{
 		if ((cManager.attackTroopSize + 1 + Broodwar->self()->completedUnitCount(Broodwar->self()->getRace().getWorker())) < 190)
 			cManager.attackTroopSize++;
-
 	}
-
-
 }
 
 void ExampleAIModule::onUnitMorph(BWAPI::Unit unit)
@@ -269,8 +259,6 @@ void ExampleAIModule::onUnitComplete(BWAPI::Unit unit)
 	//we should remove the reserved resources for that unit once it is completed/finally created
 	if (prManager.dereserveUnitPrice(unit->getType()))
 	{
-
-
 		//if that unit was the next building to create in the build order queue, we should decrement it from there
 		if (prManager.isUnitInQueueOrder(unit))
 		{
@@ -280,16 +268,14 @@ void ExampleAIModule::onUnitComplete(BWAPI::Unit unit)
 			}
 		}
 		//	Broodwar << "desreservou UM " + unit->getType().getName() << endl;
-
 	}
 
 	//if we are making zealot rush and it is zealot, add them to the army
 	if (prManager.isZealotRush() && unit->getType() == UnitTypes::Protoss_Zealot)
 	{
 		//Broodwar << "adicionou zealot na army" << endl;
-		if(!cManager.isThisUnitInThatVector(unit,cManager.attackArmy))
-		cManager.attackArmy.push_back(unit);
+		if (!cManager.isThisUnitInThatVector(unit, cManager.attackArmy))
+			cManager.attackArmy.push_back(unit);
 		cManager.updateArmyQuantity();
-
 	}
 }

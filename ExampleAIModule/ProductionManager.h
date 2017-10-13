@@ -43,9 +43,7 @@ private:
 	buildingInfo nextBuidling;
 	unitInfo nextUnit;
 
-
 	Unit scout;
-
 
 public:
 
@@ -165,7 +163,6 @@ public:
 	int getSpeedtest() { return speedtest; };
 
 	bool isScout(Unit u);
-
 
 	amount_status getGasStatus() const { return gas_status; }
 	void setGasStatus(amount_status val) { gas_status = val; }

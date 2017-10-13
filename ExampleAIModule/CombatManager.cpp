@@ -21,14 +21,22 @@ void CombatManager::updateArmyQuantity()
 
 		if (u->getType().isBuilding() || !u->isCompleted() || u->isConstructing()) continue;
 
-		if (!isThisUnitInThatVector(u,allArmy)) allArmy.push_back(u);
+		if (!isThisUnitInThatVector(u, allArmy)) allArmy.push_back(u);
 	}
 
-	
+	for (int i = 0; i < attackSets.size(); i++)
+	{
+		if (attackSets[i].size() < attackTroopSize)
+		{
+			if (attackSets.size() > i)
+				attackSets.erase(attackSets.begin() + i);
+		}
+	}
+
 	//update dps values
 	for (int i = 0; i < attackArmy.size(); i++)
 	{
-		if(i == 0) attackArmy_DPS = 0;
+		if (i == 0) attackArmy_DPS = 0;
 
 		if (attackArmy[i] == nullptr || !attackArmy[i]->exists())
 		{
@@ -37,7 +45,6 @@ void CombatManager::updateArmyQuantity()
 			continue;
 		}
 		attackArmy_DPS += attackArmy[i]->getType().maxGroundHits();
-
 	}
 
 	for (int i = 0; i < defenseArmy.size(); i++)
@@ -51,12 +58,10 @@ void CombatManager::updateArmyQuantity()
 			continue;
 		}
 		defenseArmy_DPS += defenseArmy[i]->getType().maxGroundHits();
-
 	}
 
 	for (int i = 0; i < swatArmy.size(); i++)
 	{
-
 		if (i == 0) swatArmy_DPS = 0;
 
 		if (swatArmy[i] == nullptr || !swatArmy[i]->exists())
@@ -66,7 +71,6 @@ void CombatManager::updateArmyQuantity()
 			continue;
 		}
 		swatArmy_DPS += swatArmy[i]->getType().maxGroundHits();
-
 	}
 
 	zealotRush = prManager_ptr->isZealotRush();
@@ -78,7 +82,6 @@ void CombatManager::update()
 
 	if (zealotRush)
 	{
-
 		if (attackArmy.size() >= attackTroopSize)
 		{
 			Unitset u;
@@ -90,8 +93,8 @@ void CombatManager::update()
 				}
 			}
 
-			if(attackArmy.size() >= attackTroopSize)
-			attackSets.push_back(u);
+			if (u.size() >= attackTroopSize && !isThisUnitInThatVector(u, attackSets))
+				attackSets.push_back(u);
 		}
 
 		//check for sets that can attack
@@ -105,18 +108,15 @@ void CombatManager::update()
 				for (const auto& setUnit : attackSets[i])
 				{
 					if (!setUnit->exists()) continue;
-				
+
 					Position bias(0, 0);
-					if(!enemyBasePosition || enemyBasePosition == bias) continue;
+					if (!enemyBasePosition || enemyBasePosition == bias) continue;
 
 					SmartAttackMove(setUnit, enemyBasePosition);
 				}
-				
-
 			}
 		}
 	}
-
 }
 
 bool CombatManager::pushAttackArmy(Unit u)
@@ -127,7 +127,6 @@ bool CombatManager::pushAttackArmy(Unit u)
 
 	updateArmyQuantity();
 	return true;
-
 }
 
 BWAPI::Unit CombatManager::getClosestEnemyNexus()
@@ -143,10 +142,8 @@ BWAPI::Unit CombatManager::getClosestEnemyNexus()
 	return nullptr;
 }
 
-
 void CombatManager::SmartAttackUnit(BWAPI::Unit attacker, BWAPI::Unit target)
 {
-
 	if (!attacker || !target)
 	{
 		return;
@@ -169,7 +166,6 @@ void CombatManager::SmartAttackUnit(BWAPI::Unit attacker, BWAPI::Unit target)
 
 	// if nothing prevents it, attack the target
 	attacker->attack(target);
-	
 }
 
 void CombatManager::SmartAttackMove(BWAPI::Unit attacker, const BWAPI::Position  targetPosition)
@@ -199,7 +195,6 @@ void CombatManager::SmartAttackMove(BWAPI::Unit attacker, const BWAPI::Position 
 
 	// if nothing prevents it, attack the target
 	attacker->attack(targetPosition);
-	
 }
 
 void CombatManager::SmartMove(BWAPI::Unit attacker, const BWAPI::Position  targetPosition)
@@ -229,7 +224,6 @@ void CombatManager::SmartMove(BWAPI::Unit attacker, const BWAPI::Position  targe
 
 	// if nothing prevents it, attack the target
 	attacker->move(targetPosition);
-	
 }
 
 bool CombatManager::isThisUnitInThatVector(Unit u, std::vector<BWAPI::Unit> val)
