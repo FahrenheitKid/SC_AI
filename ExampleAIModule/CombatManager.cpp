@@ -24,6 +24,21 @@ void CombatManager::updateArmyQuantity()
 		if (!isThisUnitInThatVector(u, allArmy)) allArmy.push_back(u);
 	}
 
+
+	if (zealotRush)
+	{
+		for (auto &u : Broodwar->self()->getUnits())
+		{
+			if (!u || !u->exists() || u->getType() != UnitTypes::Protoss_Zealot) continue;
+			
+
+				if(!isThisUnitInThatVector(u, attackArmy))
+					attackArmy.push_back(u);
+			
+		}
+		
+	}
+
 	for (int i = 0; i < attackSets.size(); i++)
 	{
 		if (attackSets[i].size() < attackTroopSize)
@@ -80,6 +95,8 @@ void CombatManager::update()
 {
 	updateArmyQuantity();
 
+	makeIdleArmyAttack(attackTroopSize);
+
 	if (zealotRush)
 	{
 		if (attackArmy.size() >= attackTroopSize)
@@ -112,8 +129,69 @@ void CombatManager::update()
 					Position bias(0, 0);
 					if (!enemyBasePosition || enemyBasePosition == bias) continue;
 
-					SmartAttackMove(setUnit, enemyBasePosition);
+					int nexDis = enemyBasePosition.getDistance(setUnit->getPosition());
+					Unit closest = setUnit->getClosestUnit(Filter::IsEnemy);
+
+					if (!closest || !closest->exists()) continue;
+
+					lastEnemySeenPosition = closest->getPosition();
+					if (nexDis <= 20 && closest->getType() != Broodwar->enemy()->getRace().getResourceDepot())
+					{
+						SmartAttackMove(setUnit, lastEnemySeenPosition);
+					}
+					else
+					{
+						
+						SmartAttackMove(setUnit, enemyBasePosition);
+					}
+					
 				}
+			}
+		}
+	}
+}
+
+
+void CombatManager::makeIdleArmyAttack(int idle_amount)
+{
+
+	int idle_count = 0;
+	vector<Unit> idles;
+	for (auto &a : allArmy)
+	{
+		if (!a->exists()) continue;
+
+		if (a->isIdle() || (!a->isAttacking() && !a->isMoving()) ) idles.push_back(a);
+	}
+
+	if (idles.size() > idle_amount) return;
+
+	for (auto &a : idles)
+	{
+		if (!a->exists()) continue;
+
+		if (idles.size() >= attackTroopSize)
+		{
+
+			if (!a->exists()) continue;
+
+			Position bias(0, 0);
+			if (!enemyBasePosition || enemyBasePosition == bias) continue;
+
+			int nexDis = enemyBasePosition.getDistance(a->getPosition());
+			Unit closest = a->getClosestUnit(Filter::IsEnemy);
+
+			if (!closest || !closest->exists()) continue;
+
+			lastEnemySeenPosition = closest->getPosition();
+			if (nexDis <= 20 && closest->getType() != Broodwar->enemy()->getRace().getResourceDepot())
+			{
+				SmartAttackMove(a, lastEnemySeenPosition);
+			}
+			else
+			{
+
+				SmartAttackMove(a, enemyBasePosition);
 			}
 		}
 	}
